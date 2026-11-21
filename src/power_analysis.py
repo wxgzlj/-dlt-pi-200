@@ -105,8 +105,21 @@ def holm_rejections(p_values: list[float], alpha: float = ALPHA) -> set[int]:
 
 
 def mc_interval(rate: float, simulations: int) -> list[float]:
-    se = math.sqrt(rate * (1.0 - rate) / simulations)
-    return [max(0.0, rate - 1.96 * se), min(1.0, rate + 1.96 * se)]
+    # Wilson score interval avoids zero-width intervals at rate 0 or 1.
+    z = 1.96
+    z2 = z * z
+    denominator = 1.0 + z2 / simulations
+    center = (rate + z2 / (2.0 * simulations)) / denominator
+    half = z * math.sqrt(
+        rate * (1.0 - rate) / simulations
+        + z2 / (4.0 * simulations * simulations)
+    ) / denominator
+    return [max(0.0, center - half), min(1.0, center + half)]
+
+
+def mc_standard_error(rate: float, simulations: int) -> float:
+    adjusted = (rate * simulations + 0.5) / (simulations + 1.0)
+    return math.sqrt(adjusted * (1.0 - adjusted) / simulations)
 
 
 def simulate_scenario(simulations: int, effect: float, sd_multiplier: float, seed: int) -> dict:
@@ -152,10 +165,10 @@ def simulate_scenario(simulations: int, effect: float, sd_multiplier: float, see
         "simulations": simulations,
         "target_comparison": "A_vs_D_representative",
         "target_power": target_power,
-        "target_power_mcse": math.sqrt(target_power * (1.0 - target_power) / simulations),
+        "target_power_mcse": mc_standard_error(target_power, simulations),
         "target_power_mc_95_interval": mc_interval(target_power, simulations),
         "family_rejection_rate": family_rate,
-        "family_rejection_mcse": math.sqrt(family_rate * (1.0 - family_rate) / simulations),
+        "family_rejection_mcse": mc_standard_error(family_rate, simulations),
         "family_rejection_mc_95_interval": mc_interval(family_rate, simulations),
     }
 
