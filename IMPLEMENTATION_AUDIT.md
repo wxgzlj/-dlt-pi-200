@@ -63,3 +63,12 @@ The ceremony uses exclusive file creation for one seed path per draw. The genera
 Residual limitation: the generator validates the anchor-attestation JSON fields but does not independently query GitHub or a trusted timestamp authority. An operator could still lie about the timestamp or manipulate an unanchored local copy. Verify the anchor URL, full commit SHA and commit time independently before generation; preserve a second timestamp receipt where feasible. The process materially narrows seed-shopping opportunities but is not a cryptographic trustless enforcement system.
 
 CI runs #25 and #26 completed successfully on the generator/seed-ceremony commits; run #27 completed successfully on the new seed source tests. Run #28 for the documentation update was still in progress at the time of this addendum.
+
+
+## Addendum — fail-closed seed ceremony and integration coverage (2026-11-21)
+
+- Commit `16419008f2daecc0e7018d0f4cfad15b49c3a140` adds a persistent per-draw ceremony lock created with exclusive file creation before requesting entropy. The lock is intentionally retained after any interruption; a partial ceremony cannot be silently retried with a replacement seed.
+- Commit `dec8f8f12f02d2cb7330119c4b15f739f32f4eda` adds subprocess integration tests for seed/commitment hash agreement, restrictive file permissions, duplicate invocation rejection, pre-existing public commitment rejection, and timezone-aware cutoff enforcement.
+- CI workflow uses unittest discovery, so the new integration test module is included automatically. The new commits' CI result must be inspected before marking the integration suite PASS.
+- Residual trust boundary remains: the generator checks anchor-attestation fields but does not independently verify GitHub's commit object or a trusted timestamp receipt. The seed ceremony is stronger against accidental/ordinary rerolls, not trustless against a malicious operator.
+- Confirmatory cohort remains **0/200**. No forecast has been committed or independently anchored for the confirmatory cohort.
