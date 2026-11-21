@@ -121,7 +121,7 @@ def simulate_covariance(reps,effect,sd_mult,seed,covariance,target_index=0,targe
             a[i][i]=math.sqrt(rng.gammavariate((df-i)/2,2))
             for j in range(i):
                 a[i][j]=rng.gauss(0,1)
-        b=[[sum(lower[i][k]*a[k][j] for k in range(j+1)) for j in range(i+1)] for i in range(p)]
+        b=[[sum(lower[i][k]*a[k][j] for k in range(j,i+1)) for j in range(i+1)] for i in range(p)]
         ps=[]
         for i in range(p):
             ss=sum(value*value for value in b[i])
