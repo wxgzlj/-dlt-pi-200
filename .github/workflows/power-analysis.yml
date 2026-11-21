@@ -20,7 +20,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: Run power-analysis unit tests
-        run: python -m unittest tests.test_power_analysis -v
+        run: python -m unittest discover -s tests -p 'test_power_analysis.py' -v
       - name: Run 100,000 Monte Carlo replicates per scenario
         run: python src/power_analysis.py --simulations 100000 --seed 2026112101 --output results/power_analysis_preliminary.json
       - name: Upload report artifact
