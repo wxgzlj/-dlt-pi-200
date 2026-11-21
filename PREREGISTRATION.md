@@ -68,7 +68,7 @@ Full hit-count distributions, ticket duplication, number exposure, and portfolio
 
 The 200-draw horizon is fixed, but adequacy is not assumed. Before activation, run reproducible simulation-based power analysis for a predeclared minimum effect of interest, using draw-level paired endpoints, four-comparison Holm correction, and realistic within-draw ticket dependence. Publish code, PRNG, seed, simulation count, Monte Carlo error and power curve.
 
-Minimum effect of interest and target power are not yet approved. Do not describe the study as adequately powered until this analysis exists.
+Approved minimum effect of interest: +0.10 mean front-zone hits per ticket versus D. Approved target power: 80%. Run at least 100,000 Monte Carlo experiments with a fixed published simulation seed. These are design targets, not achieved power; do not describe the study as adequately powered until the simulation and its assumptions are implemented, run, and published.
 
 ## 8. Data and verification
 
