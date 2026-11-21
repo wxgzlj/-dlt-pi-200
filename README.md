@@ -26,9 +26,11 @@ No draw is part of the confirmatory cohort until all of the following are comple
 
 1. Official game rules and draw schedule are verified and archived.
 2. Model algorithms, parameters, code, dependencies, and data-source versions are frozen.
-3. Statistical analysis plan and power analysis are frozen.
-4. A forecast containing all 50 tickets is generated before the official cutoff.
-5. The forecast commitment is published in this public repository before the draw.
+3. Statistical analysis plan and power analysis are frozen, including model-specific covariance calibration.
+4. The official history snapshot and raw source pages pass integrity checks; an operator-verified official calendar attestation reconciles every issue/date pair.
+5. The history evidence bundle is preserved and publicly timestamped; the seed commitment is independently timestamped before forecast generation.
+6. A forecast containing all 50 tickets is generated before the official cutoff.
+7. The forecast commitment is published in this public repository before the draw.
 
 The first confirmatory draw is the first eligible draw after the completed activation anchor. No historical draw, including draw 26133, may be retroactively added.
 
