@@ -4,6 +4,8 @@
 
 ## 1. Research question
 
+This is a virtual-ticket paper experiment. No real-money purchase is part of the protocol.
+
 Do registered π-derived procedures A, B1, B2, or historical-frequency procedure C outperform a matched uniform-random control D in front-zone hits per ticket on future China Super Lotto draws?
 
 This tests prospective predictive performance. It does not prove π is normal or a source of independent randomness.
