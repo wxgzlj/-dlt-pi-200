@@ -28,13 +28,13 @@ User approval recorded: 2026-11-21 (Asia/Shanghai). This approves the proposed e
 
 ## 3. C model
 
-- Use every row in the verified official history snapshot whose recorded publication timestamp is strictly earlier than the forecast cutoff.
+- Use every row in one verified official history snapshot whose retrieval has fully completed strictly before the forecast cutoff. The field `snapshot_retrieved_at_utc` is a conservative snapshot-availability proxy, not the original per-draw publication timestamp.
 - Compute marginal appearance counts separately for front and back zones.
 - Integer weight for number i is count(i)+1.
 - Sequential probability-proportional-to-size sampling without replacement; select with integer cumulative weights and rejection-based randbelow. No floating-point weighting.
 - No recency weighting, parameter tuning, or test-set feedback.
-- Include the exact CSV SHA-256, retrieval time, row count, and latest included publication timestamp in every forecast payload.
-- The snapshot retrieval time is a conservative publication-time proxy; the snapshot must be retrieved before cutoff and cannot be backdated. Completeness and issue continuity must be audited separately.
+- Include the exact CSV SHA-256, snapshot-completion time, row count, and timestamp policy in every forecast payload.
+- The snapshot completion time is a conservative availability proxy; all pages must be retrieved before cutoff, and the timestamp cannot be backdated. Completeness and issue continuity must be audited separately.
 
 ## 4. C/D deterministic random stream and seed governance
 
