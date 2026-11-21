@@ -13,7 +13,7 @@ This repository records a prospective, fixed-horizon experiment comparing four �
 
 ## Official rule verification
 
-The official game-rule page states 5 numbers from 01–35 and 2 numbers from 01–12, with 2 RMB per basic ticket; the Ministry of Finance approval and the Sports Lottery Center's January 16, 2026 notice establish that revised rules took effect from draw 26014. See:
+Official sources confirm the 5-from-35 front zone and 2-from-12 back zone; the official calculator states a basic ticket costs RMB 2 and that the revised rules apply from draw 26014 (2026-01-31). The Ministry of Finance approved the rule change under 财综〔2025〕51号. See:
 - https://m.lottery.gov.cn/ksjz/m/yxgz_dlt/
 - https://www.mof.gov.cn/gp/xxgkml/zhs/202601/t20260116_3982042.htm
 - https://www.gstc.org.cn/newsDetail/010600/77722
@@ -36,8 +36,10 @@ The first confirmatory draw is the first eligible draw after the completed activ
 
 - `PREREGISTRATION.md`: design, endpoints, inference, exclusions, stopping rules
 - `MODEL_REGISTRY.md`: model definitions and parameter freeze requirements
+- `PARAMETER_DECISIONS.md`: concrete proposed parameters awaiting user approval
 - `LEDGER_SCHEMA.md`: append-only commit/reveal record format
-- `src/`: reproducible π generation, ticket generation and scoring
+- `src/`: official history snapshot downloader, reproducible π generation and ticket generator
+- `tests/` and `.github/workflows/`: unit tests and CI workflow
 - `ledger/`: per-draw commitments and post-draw reveals
 - `data/`: verified rules and source metadata; do not store secrets here
 
@@ -51,4 +53,4 @@ Never rewrite or delete a committed forecast, reveal, or ledger entry. Correctio
 - Forecasts committed: **0**
 - Official results audited: **0**
 - Experiment active: **No**
-- Blockers: final parameter approval; reproducible code/environment freeze; complete official historical draw snapshot for C; power analysis; activation commitment.
+- Blockers: user approval of proposed parameters; clean-environment CI execution; official historical snapshot and completeness audit; power analysis; independent timestamp anchor; activation commitment.
