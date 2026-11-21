@@ -1,7 +1,7 @@
 # Source code
 
 - `fetch_history.py`: retrieves paginated draw records from the official Sports Lottery API (`gameNo=85`), preserves raw pages, rechecks page 1 for pagination drift, and writes a non-overwritable timestamped snapshot with a completion-time availability proxy.
-- `audit_history.py`: read-only audit of CSV and raw-page hashes, page-to-CSV issue reconciliation, timestamp/cutoff consistency, and candidate issue gaps.
+- `audit_history.py`: read-only audit of CSV/raw-page hashes, page-to-CSV reconciliation, snapshot cutoff, and an independent official draw-calendar attestation bound to a preserved raw calendar document/hash. A full PASS requires exact issue/date-set agreement.
 - `pi_digits.py`: deterministic Chudnovsky binary-splitting π digit generator; standard library only.
 - `generate_forecast.py`: builds all five model portfolios only from a previously committed seed and timestamp-attestation file.
 - `seed_ceremony.py`: creates exactly one 32-byte seed and its public SHA-256 commitment per draw using exclusive file creation.
