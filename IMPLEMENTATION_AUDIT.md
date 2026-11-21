@@ -48,3 +48,18 @@ No claim of predictive edge, adequate power, official history completeness, or e
 - The 600,000-digit π manifest is present. It records an independent reproduction in CPython 3.13.5, not a clean run of the repository generator; local regeneration and SHA-256 comparison remain required.
 - `src/README.md` contained an obsolete 1,000,000-digit command; it is being corrected to the approved 600,000-digit value.
 - Seed-shopping prevention and the power/inference implementation remain CRITICAL blockers. Confirmatory cohort remains 0/200.
+
+
+## Addendum — seed governance implementation (2026-11-21)
+
+Implemented in commits:
+- \`c278d197a7f3e6898562361e059874dbbc983839\`: one-time seed ceremony.
+- \`847eb80ff4319d2ba26de43043ef349c9183053b\`: generator requires private seed, matching public commitment and a pre-cutoff anchor attestation.
+- \`5af77db3dab8c8c1c97221e1ddaaad5c212d1752\`: documented procedure.
+- \`444cb49cda0b9efb0d48d3836fdd1814c498e49b\`: anti-reroll source tests.
+
+The ceremony uses exclusive file creation for one seed path per draw. The generator no longer creates a seed internally; it verifies SHA-256(private seed) against the public commitment and checks that the supplied anchor attestation names the same hash and predates the draw cutoff.
+
+Residual limitation: the generator validates the anchor-attestation JSON fields but does not independently query GitHub or a trusted timestamp authority. An operator could still lie about the timestamp or manipulate an unanchored local copy. Verify the anchor URL, full commit SHA and commit time independently before generation; preserve a second timestamp receipt where feasible. The process materially narrows seed-shopping opportunities but is not a cryptographic trustless enforcement system.
+
+CI runs #25 and #26 completed successfully on the generator/seed-ceremony commits; run #27 completed successfully on the new seed source tests. Run #28 for the documentation update was still in progress at the time of this addendum.
