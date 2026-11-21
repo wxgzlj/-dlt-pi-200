@@ -66,7 +66,7 @@ def main():
         raise ValueError("invalid page size or delay")
     out=Path(args.output_dir); rawdir=out/"raw"
     existing_raw_pages=list(rawdir.glob("page_*.json")) if rawdir.exists() else []
-    if (out/"manifest.json").exists() or (out/"history_snapshot.csv").exists() or existing_raw_pages:
+    if (out/"manifest.json").exists() or (out/"history_snapshot.csv").exists() or (out/"source_bundle.json").exists() or existing_raw_pages:
         raise FileExistsError("snapshot output already exists; choose a new timestamped --output-dir, never overwrite a prior snapshot")
     rawdir.mkdir(parents=True,exist_ok=True)
     retrieval_started=dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds").replace("+00:00","Z")
