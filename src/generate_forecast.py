@@ -95,6 +95,21 @@ def weighted_without_replacement(counts: dict[int, int], population_n: int, k: i
     return sorted(chosen)
 
 
+def verify_history_audit(path: Path, csv_hash: str, row_count: int, snapshot_completed_at_utc: str) -> tuple[dict,str]:
+    report=json.loads(path.read_text(encoding="utf-8"))
+    if report.get("status")!="PASS":
+        raise ValueError("history audit status must be PASS; warnings or failures require resolution before generation")
+    if report.get("errors") or report.get("warnings"):
+        raise ValueError("history audit must have empty errors and warnings")
+    if report.get("csv_sha256_computed")!=csv_hash:
+        raise ValueError("history audit CSV hash does not match the supplied history file")
+    if report.get("draw_count")!=row_count:
+        raise ValueError("history audit row count does not match the supplied history file")
+    if report.get("snapshot_completed_at_utc")!=snapshot_completed_at_utc:
+        raise ValueError("history audit snapshot timestamp does not match the supplied history file")
+    return report, sha(canonical(report))
+
+
 def read_history(path: Path, cutoff: dt.datetime) -> tuple[dict[int,int],dict[int,int],int,str]:
     raw = path.read_bytes()
     front_counts = {i:0 for i in range(1,36)}
@@ -199,6 +214,7 @@ def main():
     ap.add_argument("--cutoff-utc",required=True)
     ap.add_argument("--pi-digits",default="data/pi_digits_600000.txt")
     ap.add_argument("--history",required=True)
+    ap.add_argument("--history-audit",required=True,help="PASS audit JSON produced by audit_history.py for this exact snapshot")
     ap.add_argument("--seed-file",required=True,help="private 32-byte hex seed created by seed_ceremony.py")
     ap.add_argument("--seed-commitment",required=True,help="public per-draw seed commitment JSON")
     ap.add_argument("--seed-anchor",required=True,help="independent timestamp attestation JSON for the public commitment")
@@ -212,6 +228,7 @@ def main():
         raise ValueError("pi digit file failed known-prefix or decimal-only validation")
     history_path=Path(args.history)
     fc,bc,n_hist,hist_hash,latest_pub=read_history(history_path,cutoff)
+    history_audit,history_audit_hash=verify_history_audit(Path(args.history_audit),hist_hash,n_hist,latest_pub)
     seed_path=Path(args.seed_file)
     commitment_path=Path(args.seed_commitment)
     anchor_path=Path(args.seed_anchor)
@@ -265,6 +282,7 @@ def main():
       "pi_source_sha256":sha(pi_raw.rstrip(b"\n")),"historical_snapshot_sha256":hist_hash,
       "historical_draw_count":n_hist,"history_snapshot_completed_at_utc":latest_pub,
       "history_timestamp_policy":"snapshot completion time assigned to all rows; conservative availability proxy, not original publication time",
+      "history_audit":history_audit,"history_audit_sha256":history_audit_hash,
       "root_seed_hex":root.hex(),"root_seed_commitment_sha256":seed_hash,"seed_anchor":seed_anchor,"seed_derivation":"SHA256(root_seed_bytes || UTF8(experiment_id|draw_id|model_id))",
       "primary_endpoint":"per-draw mean front hits per ticket; paired model-vs-D",
       "secondary_endpoint":"per-draw mean back hits per ticket; paired model-vs-D",
