@@ -1,6 +1,6 @@
 # Model Registry — DLT-PI-200
 
-**Status: MODEL FAMILIES REGISTERED; PROPOSED PARAMETERS AWAITING USER APPROVAL.**
+**Status: MODEL FAMILIES REGISTERED; DESIGN PARAMETERS USER-APPROVED; IMPLEMENTATION FREEZE PENDING.**
 
 Each model produces exactly 10 distinct tickets per eligible draw. Ticket format: 5 distinct front numbers (01–35) and 2 distinct back numbers (01–12).
 
@@ -32,10 +32,10 @@ Each model produces exactly 10 distinct tickets per eligible draw. Ticket format
 
 ## D — uniform-random control
 - Uniform sample without replacement for each zone.
-- PRNG: Python `random.Random` with `getrandbits`; implement explicit rejection-based randbelow and partial Fisher–Yates so behavior does not depend on `random.sample`.
-- Per-draw root seed: 32 bytes from OS CSPRNG, generated once before commitment.
-- Per-model sub-seeds: SHA-256 of root_seed || experiment_id || draw_id || model_id; separate independent streams for C and D.
-- The root seed and derivation metadata are included in the committed payload. No reroll or seed shopping.
+- PRNG: SHA-256 counter stream; `randbelow(n)` uses rejection sampling and ticket selection uses partial Fisher–Yates.
+- Per-draw root seed: 32 bytes from OS CSPRNG; separate derived streams for C and D.
+- Per-model sub-seeds: SHA-256 of root_seed || experiment_id || draw_id || model_id.
+- The root seed and derivation metadata are included in the committed payload. One-seed-per-draw public seed commitment and anti-reroll enforcement remain activation blockers.
 
 ## π stream allocation proposal
 See PARAMETER_DECISIONS.md. Each ticket receives a fixed, disjoint 2,048-digit window; front and back zones occupy non-overlapping blocks. If a window is exhausted, generation fails closed; it must not silently jump to a new window.
