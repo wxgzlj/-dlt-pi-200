@@ -12,6 +12,36 @@ def canonical(obj):
     return json.dumps(obj, ensure_ascii=False, sort_keys=True, separators=(",", ":"), allow_nan=False).encode("utf-8")
 def sha(b: bytes) -> str: return hashlib.sha256(b).hexdigest()
 def now(): return dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")
+
+def parse_utc(value):
+    parsed=dt.datetime.fromisoformat(str(value).replace("Z","+00:00"))
+    if parsed.tzinfo is None: raise ValueError("timestamp must include Z or explicit UTC offset")
+    return parsed.astimezone(dt.timezone.utc)
+
+def validate_seed_provenance(obj, cutoff_utc):
+    required=("created_at_utc","root_seed_hex","root_seed_commitment_sha256","seed_anchor")
+    missing=[key for key in required if key not in obj]
+    if missing: raise ValueError("forecast payload missing seed provenance: "+", ".join(missing))
+    try: root=bytes.fromhex(obj["root_seed_hex"])
+    except Exception: raise ValueError("root_seed_hex is not valid hexadecimal")
+    if len(root)!=32: raise ValueError("root seed must be exactly 32 bytes")
+    root_hash=sha(root)
+    if obj["root_seed_commitment_sha256"]!=root_hash:
+        raise ValueError("root seed does not match its public commitment hash")
+    anchor=obj["seed_anchor"]
+    if not isinstance(anchor,dict): raise ValueError("seed_anchor must be an object")
+    if anchor.get("seed_commitment_sha256")!=root_hash:
+        raise ValueError("seed anchor does not bind the forecast root seed")
+    if not anchor.get("anchor_url"): raise ValueError("seed anchor URL is missing")
+    commit_sha=str(anchor.get("anchor_commit_sha",""))
+    if len(commit_sha)!=40 or any(c not in "0123456789abcdefABCDEF" for c in commit_sha):
+        raise ValueError("seed anchor must contain the full 40-character commit SHA")
+    anchor_time=parse_utc(anchor.get("anchored_at_utc",""))
+    created_time=parse_utc(obj["created_at_utc"])
+    if anchor_time>=created_time: raise ValueError("seed commitment must be anchored before forecast generation")
+    if created_time>=cutoff_utc: raise ValueError("forecast payload was created at or after the draw cutoff")
+    if anchor_time>=cutoff_utc: raise ValueError("seed commitment was not anchored before the draw cutoff")
+
 def read_ledger():
     if not LEDGER.exists(): return []
     out=[]
@@ -34,7 +64,7 @@ def append_record(record):
 def cmd_commit(args):
     p=Path(args.payload).resolve()
     obj=json.loads(p.read_text(encoding="utf-8"))
-    required=["experiment_id","draw_id","scheduled_cutoff_utc","game_rules_id","models","tickets","code_sha256","analysis_plan_sha256","primary_endpoint"]
+    required=["experiment_id","draw_id","created_at_utc","scheduled_cutoff_utc","game_rules_id","models","tickets","code_sha256","analysis_plan_sha256","primary_endpoint","root_seed_hex","root_seed_commitment_sha256","seed_anchor"]
     missing=[k for k in required if k not in obj]
     if missing: raise ValueError("payload missing required keys: "+", ".join(missing))
     exp,draw=str(obj["experiment_id"]),str(obj["draw_id"])
@@ -43,6 +73,7 @@ def cmd_commit(args):
     cutoff=dt.datetime.fromisoformat(cutoff_text)
     if cutoff.tzinfo is None: raise ValueError("scheduled_cutoff_utc must include Z or an explicit UTC offset")
     cutoff_utc=cutoff.astimezone(dt.timezone.utc)
+    validate_seed_provenance(obj, cutoff_utc)
     if dt.datetime.now(dt.timezone.utc) >= cutoff_utc:
         raise ValueError("forecast cutoff has passed; this record cannot enter the confirmatory cohort")
     # Defense in depth: enforce the seed ceremony at the ledger boundary too.
