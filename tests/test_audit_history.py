@@ -110,6 +110,12 @@ class TestHistoryAudit(unittest.TestCase):
         self.assertEqual(result["status"], "FAIL")
         self.assertTrue(any("do not exactly match" in e for e in result["errors"]))
 
+    def test_calendar_source_tampering_fails(self):
+        (self.root / "calendar_source.html").write_bytes(b"tampered calendar")
+        result = audit_snapshot(self.root, calendar_attestation_path=self.calendar_path)
+        self.assertEqual(result["status"], "FAIL")
+        self.assertTrue(any("source document SHA-256 mismatch" in e for e in result["errors"]))
+
     def test_calendar_timestamp_must_precede_cutoff(self):
         result = audit_snapshot(self.root, "2026-11-21T12:05:00Z", self.calendar_path)
         self.assertEqual(result["status"], "FAIL")
