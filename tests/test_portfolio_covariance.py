@@ -2,10 +2,11 @@ import hashlib
 import itertools
 import json
 import unittest
+from pathlib import Path
 
 from src.portfolio_covariance import (
-    analyze_payload, analyze_panel, exposure_vector, score_covariance,
-    score_mean, validate_front_portfolio,
+    analyze_payload, analyze_panel, current_source_hash, exposure_vector, score_covariance,
+    score_mean, sha, validate_front_portfolio,
 )
 
 
@@ -29,8 +30,8 @@ def payload(draw_id="SYNTH-1"):
         "draw_id": draw_id,
         "models": ["A", "B1", "B2", "C", "D"],
         "tickets_per_model": 10,
-        "code_sha256": "1" * 64,
-        "analysis_plan_sha256": "2" * 64,
+        "code_sha256": current_source_hash(),
+        "analysis_plan_sha256": sha(Path("PREREGISTRATION.md").read_bytes()),
         "pi_source_sha256": "3" * 64,
         "historical_snapshot_sha256": "4" * 64,
         "history_audit_sha256": audit_hash,
@@ -85,7 +86,7 @@ class TestPortfolioCovariance(unittest.TestCase):
     def test_panel_rejects_mixed_code_provenance(self):
         base = payload("SYNTH-0")
         payloads = [dict(base, draw_id=f"SYNTH-{i}") for i in range(200)]
-        payloads[50] = dict(payloads[50], code_sha256="9" * 64)
+        payloads[50] = dict(payloads[50], analysis_plan_sha256="9" * 64)
         with self.assertRaisesRegex(ValueError, "mixes frozen provenance"):
             analyze_panel(payloads)
 
