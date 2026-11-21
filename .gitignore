@@ -6,3 +6,4 @@ prospective-ledger.jsonl
 prospective-vault/
 *.sealed.json
 *.nonce
+private/
