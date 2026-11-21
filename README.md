@@ -2,11 +2,11 @@
 
 **Status: PREREGISTRATION DRAFT — NOT YET ACTIVE**
 
-This repository records a prospective, fixed-horizon experiment comparing four π-derived / historical-frequency procedures and one matched uniform-random control for China Super Lotto (大乐透).
+This repository records a prospective, fixed-horizon paper experiment comparing four π-derived / historical-frequency procedures and one matched uniform-random control for China Super Lotto (大乐透). No real-money tickets are required or recommended.
 
 - Experiment ID: `DLT-PI-200`
 - Planned horizon: 200 consecutive eligible future draws
-- Planned budget: 10 distinct tickets per model per draw; 50 tickets total per draw
+- Planned budget: 10 virtual tickets per model per draw; 50 virtual tickets total per draw
 - Models: A, B1, B2, C, D
 - Primary endpoint: mean front-zone hits per ticket, aggregated within draw first
 - Secondary endpoint: mean back-zone hits per ticket, aggregated within draw first
