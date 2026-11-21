@@ -17,7 +17,7 @@ From a local clone at the repository root:
 
 ```bash
 python src/fetch_history.py --output-dir data/history_snapshot
-python src/pi_digits.py --digits 1000000 --output data/pi_digits_1000000.txt
+python src/pi_digits.py --digits 600000 --output data/pi_digits_600000.txt
 python src/generate_forecast.py --draw-id 27001 --cutoff-utc 2026-11-23T13:10:00Z --history data/history_snapshot/history_snapshot.csv --output private/forecast_27001.json
 python src/prospective.py commit private/forecast_27001.json
 ```
