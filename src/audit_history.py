@@ -3,6 +3,7 @@
 from __future__ import annotations
 import argparse
 import csv
+from collections import Counter
 import datetime as dt
 import hashlib
 import json
@@ -118,6 +119,10 @@ def audit_snapshot(snapshot_dir: Path, cutoff_utc: str | None = None) -> dict:
             errors.append("CSV rows do not share manifest snapshot completion time")
         if bundle.get("snapshot_completed_at_utc") != manifest.get("snapshot_completed_at_utc"):
             errors.append("source bundle and manifest completion timestamps differ")
+        if bundle.get("retrieval_started_at_utc") != manifest.get("retrieval_started_at_utc"):
+            errors.append("source bundle and manifest retrieval start timestamps differ")
+        if not bundle.get("page_1_stability_check", {}).get("signature_matches"):
+            errors.append("source bundle page 1 stability attestation is missing or failed")
         if cutoff_utc and completed >= parse_utc(cutoff_utc):
             errors.append("snapshot completed at or after forecast cutoff")
     except Exception as exc:
@@ -132,6 +137,8 @@ def audit_snapshot(snapshot_dir: Path, cutoff_utc: str | None = None) -> dict:
     raw_dir = snapshot_dir / "raw"
     for page in page_records:
         number = page.get("page")
+        if not str(page.get("url", "")).startswith(API + "?"):
+            errors.append(f"raw page {number} URL does not match the official API endpoint")
         path = raw_dir / f"page_{number:04d}.json"
         try:
             raw = path.read_bytes()
@@ -160,7 +167,7 @@ def audit_snapshot(snapshot_dir: Path, cutoff_utc: str | None = None) -> dict:
     gaps = candidate_issue_gaps(ids)
     if gaps:
         warnings.append("candidate issue-number gaps require official draw-calendar cross-check; not automatically classified as missing draws")
-    duplicate_dates = sorted({d for d in dates if dates.count(d) > 1})
+    duplicate_dates = sorted(d for d, count in Counter(dates).items() if count > 1)
     if duplicate_dates:
         warnings.append("multiple issues share draw dates; verify against official calendar")
 
