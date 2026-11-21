@@ -9,7 +9,7 @@
 - `power_analysis.py`: parametric Monte Carlo power-planning engine with Holm correction and Wilson Monte Carlo intervals.
 - `portfolio_covariance.py`: exact model score covariance from fixed front-number exposure vectors under a uniform 5-of-35 draw.
 - `audit_draw.py`: scores every ticket after the draw and reports descriptive results without claiming a one-draw edge.
-- `tests/`: unit and integration tests for π generation, ticket generation, seed governance, power-analysis mathematics, and exact portfolio covariance.
+- `tests/`: unit and integration tests for π generation, ticket generation, seed governance, power-analysis mathematics, exact portfolio covariance, history snapshot schema, and raw-source audit.
 
 Suggested preparation:
 
