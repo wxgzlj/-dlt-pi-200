@@ -13,7 +13,7 @@ COMB = math.comb(NNUM, K)
 def current_source_hash():
     digest=hashlib.sha256()
     for path in sorted(Path("src").glob("*.py")):
-        digest.update(path.name.encode("utf-8")+b"\\0"+path.read_bytes())
+        digest.update(path.name.encode("utf-8")+b"\0"+path.read_bytes())
     return digest.hexdigest()
 
 
