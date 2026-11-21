@@ -146,7 +146,7 @@ def simulate_covariance(reps,effect,sd_mult,seed,covariance,target_index=0,targe
     }
 
 
-def simulate(reps,effect,sd_mult,seed):
+def simulate(reps,effect,sd_mult,seed,target_index=0,target_model="A"):
     rng=random.Random(seed); df=N-1
     delta=effect*math.sqrt(N)/(paired_sd()*sd_mult)
     anyrej=target=0
@@ -156,7 +156,7 @@ def simulate(reps,effect,sd_mult,seed):
         ps=[]
         for j in range(NTEST):
             mmean=rng.gauss(0,1)
-            z=(mmean-dmean)/math.sqrt(2)+(delta if j==0 else 0)
+            z=(mmean-dmean)/math.sqrt(2)+(delta if j==target_index else 0)
             mss=rng.gammavariate(df/2,2)
             cross=rng.gauss(0,1)
             diffss=(mss+dss-2*math.sqrt(dss)*cross)/2
@@ -164,11 +164,11 @@ def simulate(reps,effect,sd_mult,seed):
             ps.append(t_p(stat,df))
         rejected=holm(ps)
         anyrej += bool(rejected)
-        target += 0 in rejected
+        target += target_index in rejected
     family=anyrej/reps; power=target/reps
     return {
         "effect":effect,"sd_multiplier":sd_mult,"simulations":reps,
-        "target_comparison":"A_vs_D_representative",
+        "target_comparison":f"{target_model}_vs_D",
         "target_power":power,"target_power_mcse":mcse(power,reps),
         "target_power_mc_95_wilson":wilson(power,reps),
         "family_rejection_rate":family,"family_rejection_mcse":mcse(family,reps),
@@ -179,9 +179,16 @@ def simulate(reps,effect,sd_mult,seed):
 def report(reps,seed,covariance=None,target_model="A",covariance_source="REFERENCE_ANALYTIC"):
     target_index=("A","B1","B2","C").index(target_model)
     if covariance is None:
-        run=lambda reps,e,m,s: simulate(reps,e,m,s)
+        run=lambda reps,e,m,s: simulate(reps,e,m,s,target_index,target_model)
+        variance=paired_sd()**2
+        recorded_covariance=[[variance if i==j else variance/2 for j in range(NTEST)] for i in range(NTEST)]
+        joint_description="reference model: candidate-minus-D tests share one D component; candidate residuals are mutually independent"
+        covariance_limitation="actual A/B1/B2 shared-pi dependence and C portfolio exposure are not calibrated"
     else:
         run=lambda reps,e,m,s: simulate_covariance(reps,e,m,s,covariance,target_index,target_model)
+        recorded_covariance=covariance
+        joint_description="supplied 4x4 fixed-portfolio covariance matrix captures cross-model overlap and shared-control dependence"
+        covariance_limitation="uses average per-draw covariance as a common covariance; draw-to-draw heteroskedasticity is approximated"
     curve=[run(reps,e,1.0,seed+i*100003) for i,e in enumerate(EFFECTS)]
     stress=[run(reps,MDE,m,seed+900001+i*100003) for i,m in enumerate((1.25,1.5,2.0))]
     return {
@@ -191,7 +198,7 @@ def report(reps,seed,covariance=None,target_model="A",covariance_source="REFEREN
         "runtime":{"python":platform.python_version(),"implementation":platform.python_implementation(),
                    "prng":"random.Random MT19937","base_seed":seed},
         "covariance_source":covariance_source,
-        "portfolio_paired_difference_covariance_matrix":covariance,
+        "portfolio_paired_difference_covariance_matrix":recorded_covariance,
         "target_model":target_model,
         "design":{"draws":N,"tickets_per_model_per_draw":T,
                   "endpoint":"draw-level mean front hits per ticket",
@@ -207,8 +214,8 @@ def report(reps,seed,covariance=None,target_model="A",covariance_source="REFEREN
         "alternative":{
             "type":"draw-level location shift, one candidate shifted; other three null",
             "warning":"statistical power scenario only; not a physical lottery mechanism or predictive evidence",
-            "joint_dependence":"shared D mean and residual vector; candidate residuals mutually independent",
-            "limitation":"actual A/B1/B2 shared-pi dependence and C portfolio exposure are not calibrated"},
+            "joint_dependence":joint_description,
+            "limitation":covariance_limitation},
         "null_fwer_check":curve[0],"power_curve":curve,"noise_inflation_sensitivity":stress,
         "conclusion":"PRELIMINARY_ONLY; do not certify adequate power until actual frozen portfolio exposure covariance is calibrated"
     }
