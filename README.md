@@ -38,8 +38,10 @@ The first confirmatory draw is the first eligible draw after the completed activ
 - `MODEL_REGISTRY.md`: model definitions and parameter freeze requirements
 - `PARAMETER_DECISIONS.md`: concrete proposed parameters awaiting user approval
 - `LEDGER_SCHEMA.md`: append-only commit/reveal record format
-- `src/`: official history snapshot downloader, reproducible π generation and ticket generator
-- `tests/` and `.github/workflows/`: unit tests and CI workflow
+- `src/`: official history snapshot downloader, reproducible π generation, ticket generator, seed ceremony, power simulation and exact portfolio covariance diagnostics
+- `POWER_ANALYSIS_PLAN.md` / `results/power_analysis_preliminary.json`: parametric power-planning assumptions and reproducible Monte Carlo output
+- `PORTFOLIO_COVARIANCE.md`: exact covariance of fixed ticket portfolios under a uniform draw
+- `tests/` and `.github/workflows/`: unit tests and CI workflows
 - `ledger/`: per-draw commitments and post-draw reveals
 - `data/`: verified rules and source metadata; do not store secrets here
 
@@ -54,4 +56,6 @@ Never rewrite or delete a committed forecast, reveal, or ledger entry. Correctio
 - Official results audited: **0**
 - Experiment active: **No**
 - Seed governance: one-time seed ceremony, persistent fail-closed lock, generator checks, and ledger-layer seed/anchor validation implemented; integration tests added. External anchor authenticity is still manually verified.
-- Remaining blockers: simulation-based power analysis and fixed-horizon inference; official history snapshot and continuity audit; full generator→commit→reveal→verify round-trip and tamper tests; latest CI result inspection; exact runtime freeze; independent activation timestamp.
+- Power analysis: preliminary 100,000-replicate-per-scenario parametric report published; +0.10 MDE power is 96.213% under the idealized reference variance, but 63.642% under 1.5× noise. This does not certify adequate power.
+- Portfolio covariance: exact exposure/covariance calculator implemented and tested; no verified 200-payload portfolio panel yet, and the power engine is not yet wired to consume it.
+- Remaining blockers: verified official history snapshot and continuity audit; synthetic 200-payload panel including C from a verified history snapshot; integrate actual covariance into power simulation; freeze final inferential test; full generator→commit→reveal→verify round-trip and tamper tests; latest CI result inspection; exact runtime freeze; independent activation timestamp.
