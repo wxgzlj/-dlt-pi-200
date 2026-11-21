@@ -102,6 +102,16 @@ def analyze_payload(payload):
         raise ValueError("payload experiment_id is not DLT-PI-200")
     if not isinstance(payload.get("draw_id"), str) or not payload["draw_id"].strip():
         raise ValueError("payload draw_id must be a non-empty string")
+    if payload.get("models") != list(MODELS) or payload.get("tickets_per_model") != 10:
+        raise ValueError("payload model registry or ticket budget does not match the frozen design")
+    provenance_fields=("code_sha256","analysis_plan_sha256","pi_source_sha256",
+                       "historical_snapshot_sha256","history_audit_sha256",
+                       "history_snapshot_completed_at_utc","game_rules_id")
+    missing=[key for key in provenance_fields if not payload.get(key)]
+    if missing:
+        raise ValueError("payload missing frozen provenance fields: "+", ".join(missing))
+    if not isinstance(payload.get("parameters"),dict):
+        raise ValueError("payload is missing frozen model parameters")
     tickets = payload.get("tickets")
     if not isinstance(tickets, dict) or set(tickets) != set(MODELS):
         raise ValueError("payload must contain exactly A,B1,B2,C,D")
@@ -137,6 +147,17 @@ def analyze_panel(payloads):
         raise ValueError("every panel payload must have a non-empty draw_id")
     if len(set(draw_ids)) != len(draw_ids):
         raise ValueError("portfolio panel contains duplicate draw_id values")
+    provenance_fields=("code_sha256","analysis_plan_sha256","pi_source_sha256",
+                       "historical_snapshot_sha256","history_audit_sha256",
+                       "history_snapshot_completed_at_utc","game_rules_id")
+    baseline={key:payloads[0].get(key) for key in provenance_fields}
+    baseline_parameters=json.dumps(payloads[0].get("parameters"),sort_keys=True,separators=(",",":"))
+    for payload in payloads[1:]:
+        for key in provenance_fields:
+            if payload.get(key)!=baseline[key]:
+                raise ValueError(f"portfolio panel mixes frozen provenance field: {key}")
+        if json.dumps(payload.get("parameters"),sort_keys=True,separators=(",",":"))!=baseline_parameters:
+            raise ValueError("portfolio panel mixes model parameter definitions")
     draw_reports = [analyze_payload(p) for p in payloads]
     names = list(CANDIDATES)
     avg_cov = [[
@@ -149,6 +170,8 @@ def analyze_panel(payloads):
         "draw_count": len(draw_reports),
         "independent_unit": "draw",
         "paired_difference_models": names,
+        "frozen_provenance": baseline,
+        "parameters_sha256": __import__("hashlib").sha256(baseline_parameters.encode()).hexdigest(),
         "average_per_draw_paired_difference_covariance": avg_cov,
         "covariance_of_200_draw_mean": cov_of_mean,
         "draw_level_diagnostics": draw_reports,
