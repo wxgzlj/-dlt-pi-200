@@ -54,11 +54,15 @@ def make_snapshot(root):
         "page_1_stability_check": {"re_fetched": True, "signature_matches": True},
     }
     (root / "source_bundle.json").write_text(json.dumps(bundle), encoding="utf-8")
+    calendar_source = b"synthetic official calendar fixture; test-only"
+    (root / "calendar_source.html").write_bytes(calendar_source)
     calendar_path = root / "calendar_attestation.json"
     calendar = {
         "status": "VERIFIED",
         "source_url": "https://www.sporttery.cn/official/dlt-calendar",
         "retrieved_at_utc": "2026-11-21T12:10:00Z",
+        "source_document_file": "calendar_source.html",
+        "source_document_sha256": hashlib.sha256(calendar_source).hexdigest(),
         "draw_records": [
             {"draw_id": "26130", "draw_date": "2026-11-18"},
             {"draw_id": "26131", "draw_date": "2026-11-19"},
