@@ -47,7 +47,12 @@ def make_snapshot(root):
         "page_1_stability_check": {"re_fetched": True, "signature_matches": True},
     }
     (root / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
-    bundle = {"snapshot_completed_at_utc": completed, "page_hashes": [page]}
+    bundle = {
+        "retrieval_started_at_utc": "2026-11-21T11:59:00Z",
+        "snapshot_completed_at_utc": completed,
+        "page_hashes": [page],
+        "page_1_stability_check": {"re_fetched": True, "signature_matches": True},
+    }
     (root / "source_bundle.json").write_text(json.dumps(bundle), encoding="utf-8")
     return csv_path, raw_dir / "page_0001.json"
 
