@@ -20,7 +20,7 @@ python src/fetch_history.py --output-dir data/history_snapshot
 python src/pi_digits.py --digits 600000 --output data/pi_digits_600000.txt
 python src/seed_ceremony.py create --draw-id DRAW_ID --cutoff-utc YYYY-MM-DDTHH:MM:SSZ
 # Publish ledger/seed_commitments/DRAW_ID.json and independently verify its timestamp.
-python src/generate_forecast.py --draw-id DRAW_ID --cutoff-utc YYYY-MM-DDTHH:MM:SSZ --history data/history_snapshot/history.csv --seed-file private/seeds/DRAW_ID.seed --seed-commitment ledger/seed_commitments/DRAW_ID.json --seed-anchor ledger/seed_commitments/DRAW_ID.anchor.json --output private/forecast_DRAW_ID.json
+python src/generate_forecast.py --draw-id DRAW_ID --cutoff-utc YYYY-MM-DDTHH:MM:SSZ --history data/history_snapshot/history_snapshot.csv --seed-file private/seeds/DRAW_ID.seed --seed-commitment ledger/seed_commitments/DRAW_ID.json --seed-anchor ledger/seed_commitments/DRAW_ID.anchor.json --output private/forecast_DRAW_ID.json
 python src/prospective.py commit private/forecast_27001.json
 ```
 
