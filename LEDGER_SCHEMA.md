@@ -18,11 +18,13 @@ From a local clone at the repository root:
 ```bash
 python src/fetch_history.py --output-dir data/history_snapshot
 python src/pi_digits.py --digits 600000 --output data/pi_digits_600000.txt
-python src/generate_forecast.py --draw-id 27001 --cutoff-utc 2026-11-23T13:10:00Z --history data/history_snapshot/history_snapshot.csv --output private/forecast_27001.json
+python src/seed_ceremony.py create --draw-id DRAW_ID --cutoff-utc YYYY-MM-DDTHH:MM:SSZ
+# Publish ledger/seed_commitments/DRAW_ID.json and independently verify its timestamp.
+python src/generate_forecast.py --draw-id DRAW_ID --cutoff-utc YYYY-MM-DDTHH:MM:SSZ --history data/history_snapshot/history.csv --seed-file private/seeds/DRAW_ID.seed --seed-commitment ledger/seed_commitments/DRAW_ID.json --seed-anchor ledger/seed_commitments/DRAW_ID.anchor.json --output private/forecast_DRAW_ID.json
 python src/prospective.py commit private/forecast_27001.json
 ```
 
-Use the actual next eligible draw ID and its official cutoff; the values above are examples, not a live forecast. The commit command validates the exact five models, ten tickets per model, ranges, uniqueness and cutoff, then stores payload+nonce in the ignored private vault and appends a public COMMIT event.
+Use the actual next eligible draw ID and its official cutoff; the values above are examples, not a live forecast. The commit command independently validates the seed hash, seed-anchor binding, timezone-aware anchor and forecast timestamps, exact five models, ten tickets per model, ranges, uniqueness and cutoff. It then stores payload+nonce in the ignored private vault and appends a COMMIT event. The anchor JSON is not cryptographically verified against GitHub by the script; verify its URL, full commit SHA and actual commit time externally before committing.
 
 Before the cutoff, publish the updated `ledger/events.jsonl` in a Git commit. Record the Git commit URL/SHA in the experiment log. For stronger independent timestamping, mirror the commitment hash and ledger head to a second public append-only timestamp service. A local file or Git commit alone is not absolute immutability.
 
