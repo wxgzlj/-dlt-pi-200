@@ -1,4 +1,6 @@
+import hashlib
 import itertools
+import json
 import unittest
 
 from src.portfolio_covariance import (
@@ -13,6 +15,15 @@ def ten_tickets():
 
 def payload(draw_id="SYNTH-1"):
     tickets = ten_tickets()
+    audit = {
+        "status": "PASS",
+        "errors": [],
+        "warnings": [],
+        "csv_sha256_computed": "4" * 64,
+        "draw_count": 1200,
+        "snapshot_completed_at_utc": "2026-11-21T12:00:00Z",
+    }
+    audit_hash = hashlib.sha256(json.dumps(audit, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
     return {
         "experiment_id": "DLT-PI-200",
         "draw_id": draw_id,
@@ -22,8 +33,10 @@ def payload(draw_id="SYNTH-1"):
         "analysis_plan_sha256": "2" * 64,
         "pi_source_sha256": "3" * 64,
         "historical_snapshot_sha256": "4" * 64,
-        "history_audit_sha256": "5" * 64,
+        "history_audit_sha256": audit_hash,
         "history_snapshot_completed_at_utc": "2026-11-21T12:00:00Z",
+        "historical_draw_count": 1200,
+        "history_audit": audit,
         "game_rules_id": "DLT-5x35-2x12-2026-revision",
         "parameters": {"pi_block_length": 6, "pi_window_digits": 2048},
         "tickets": {m: tickets for m in ("A", "B1", "B2", "C", "D")},
