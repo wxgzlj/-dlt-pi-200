@@ -36,7 +36,7 @@ The first confirmatory draw is the first eligible draw after the completed activ
 
 - `PREREGISTRATION.md`: design, endpoints, inference, exclusions, stopping rules
 - `MODEL_REGISTRY.md`: model definitions and parameter freeze requirements
-- `PARAMETER_DECISIONS.md`: concrete proposed parameters awaiting user approval
+- `PARAMETER_DECISIONS.md`: user-approved design parameters; implementation and activation gates remain open
 - `LEDGER_SCHEMA.md`: append-only commit/reveal record format
 - `src/`: official history snapshot downloader/auditor, reproducible π generation, ticket generator, seed ceremony, power simulation and exact portfolio covariance diagnostics
 - `POWER_ANALYSIS_PLAN.md` / `results/power_analysis_preliminary.json`: parametric power-planning assumptions and reproducible Monte Carlo output
