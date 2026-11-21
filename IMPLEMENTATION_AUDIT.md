@@ -113,3 +113,13 @@ Confirmatory cohort remains **0/200**; no forecast has been committed for the co
 - For a 200-payload panel it requires exactly 200 distinct non-empty draw IDs and reports average per-draw covariance plus covariance of the 200-draw mean. It rejects duplicate tickets and invalid front-zone values.
 - The analytic covariance formula was checked against exhaustive enumeration on a smaller finite population. Six local tests passed on CPython 3.13.5, including duplicate draw-ID rejection and the identical-portfolio zero-variance invariant.
 - This closes an important mathematical tooling gap but does **not** yet produce a real model-specific power estimate: no verified 200-payload panel exists, the verified C-history snapshot is still missing, and the power engine has not yet been integrated with this covariance matrix. Power adequacy remains NOT CERTIFIED; confirmatory cohort remains 0/200.
+
+
+## Addendum — history snapshot timestamp and pagination controls (2026-11-21)
+
+- `src/fetch_history.py` now assigns `snapshot_retrieved_at_utc` only after all pages have been fetched, rather than timestamping rows at retrieval start. This closes a cutoff-crossing leakage window in which a long pagination run could otherwise include a later page after the cutoff while retaining an earlier timestamp.
+- It re-fetches page 1 after pagination and compares issue/date/result signatures to detect new-head insertion that can shift page-number pagination. A changed first page causes the snapshot to fail closed.
+- It refuses to overwrite an existing snapshot directory's manifest/CSV/raw page files; use a new timestamped output directory. It records retrieval start, completion time, raw page hashes and a source bundle.
+- `src/generate_forecast.py` now requires the explicit `snapshot_retrieved_at_utc` field, requires all rows to share one completion timestamp, checks that timestamp strictly precedes cutoff, and enforces chronological date ordering. Forecast payload labels this as a snapshot-completion availability proxy, not an original publication timestamp.
+- A new `tests/test_history_snapshot.py` covers cutoff enforcement, mixed snapshot rejection, old ambiguous column rejection, chronology, and official API normalization. CI result remains to be inspected.
+- Limitation: page-1 recheck detects a shifting head but does not prove that older pages were not corrected during the fetch. Raw pages and hashes are preserved for audit; full page-by-page historical revision reconciliation remains open.
