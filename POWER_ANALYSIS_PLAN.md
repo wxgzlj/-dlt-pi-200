@@ -89,4 +89,4 @@ No predictive edge, adequate power, or economic value is established by this rep
 
 ## Automated reproduction
 
-The repository workflow `.github/workflows/power-analysis.yml` reruns the 100,000-replicate-per-scenario analysis on CPython 3.12, executes the power-analysis tests, uploads the JSON artifact, and commits the generated report. The committed JSON is the canonical runtime-specific output; this document's preliminary numeric table must be reconciled to that output before the report is treated as final planning evidence.
+The repository workflow `.github/workflows/power-analysis.yml` reruns the 100,000-replicate-per-scenario analysis on CPython 3.12, runs the test file through unittest discovery, uploads the JSON artifact, and commits the generated report. The committed JSON is the canonical runtime-specific output; this document's preliminary numeric table must be reconciled to that output before the report is treated as final planning evidence.
