@@ -156,3 +156,10 @@ Confirmatory cohort remains **0/200**; no forecast has been committed for the co
 - Without this attestation, a technically intact snapshot is only `PASS_WITH_WARNINGS`; the forecast generator and commit ledger reject it. Candidate issue gaps and duplicate draw dates are not guessed away; they must be reconciled against the official calendar.
 - Added tests for absent attestation, exact match, mismatched issue list and late calendar retrieval. The fetch-history integration fixture now supplies a synthetic official-calendar attestation for deterministic testing; this is test data only, not a real production calendar verification.
 - Activation now requires a real official calendar record, not merely a self-consistent API snapshot. This deliberately keeps the experiment inactive until independent continuity evidence exists.
+
+
+## Addendum — calendar attestation raw-source binding (2026-11-21)
+
+- The official calendar attestation now also requires a preserved raw source document inside the snapshot directory and its SHA-256. The auditor rejects path traversal, missing source documents, and source-document hash mismatches.
+- The audit report carries both the attestation JSON hash and raw calendar document hash; the forecast generator embeds the report and the commit layer rechecks its canonical hash and verified-continuity status.
+- Test fixtures use synthetic calendar source bytes only to exercise the pipeline; they are not evidence of an actual official calendar reconciliation.
