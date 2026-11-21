@@ -18,6 +18,25 @@ def parse_utc(value):
     if parsed.tzinfo is None: raise ValueError("timestamp must include Z or explicit UTC offset")
     return parsed.astimezone(dt.timezone.utc)
 
+def validate_history_audit(obj):
+    required=("historical_snapshot_sha256","historical_draw_count","history_snapshot_completed_at_utc",
+              "history_audit","history_audit_sha256")
+    missing=[key for key in required if key not in obj]
+    if missing: raise ValueError("forecast payload missing history-audit provenance: "+", ".join(missing))
+    audit=obj["history_audit"]
+    if not isinstance(audit,dict): raise ValueError("history_audit must be an object")
+    if sha(canonical(audit))!=obj["history_audit_sha256"]:
+        raise ValueError("history audit report hash mismatch")
+    if audit.get("status")!="PASS" or audit.get("errors") or audit.get("warnings"):
+        raise ValueError("history audit must have PASS status and no errors/warnings")
+    if audit.get("csv_sha256_computed")!=obj["historical_snapshot_sha256"]:
+        raise ValueError("history audit does not bind the forecast history CSV hash")
+    if audit.get("draw_count")!=obj["historical_draw_count"]:
+        raise ValueError("history audit draw count does not match forecast history count")
+    if audit.get("snapshot_completed_at_utc")!=obj["history_snapshot_completed_at_utc"]:
+        raise ValueError("history audit timestamp does not match forecast snapshot timestamp")
+
+
 def validate_seed_provenance(obj, cutoff_utc):
     required=("created_at_utc","root_seed_hex","root_seed_commitment_sha256","seed_anchor")
     missing=[key for key in required if key not in obj]
@@ -64,7 +83,7 @@ def append_record(record):
 def cmd_commit(args):
     p=Path(args.payload).resolve()
     obj=json.loads(p.read_text(encoding="utf-8"))
-    required=["experiment_id","draw_id","created_at_utc","scheduled_cutoff_utc","game_rules_id","models","tickets","code_sha256","analysis_plan_sha256","primary_endpoint","root_seed_hex","root_seed_commitment_sha256","seed_anchor"]
+    required=["experiment_id","draw_id","created_at_utc","scheduled_cutoff_utc","game_rules_id","models","tickets","code_sha256","analysis_plan_sha256","primary_endpoint","root_seed_hex","root_seed_commitment_sha256","seed_anchor","historical_snapshot_sha256","historical_draw_count","history_snapshot_completed_at_utc","history_audit","history_audit_sha256"]
     missing=[k for k in required if k not in obj]
     if missing: raise ValueError("payload missing required keys: "+", ".join(missing))
     exp,draw=str(obj["experiment_id"]),str(obj["draw_id"])
@@ -74,6 +93,7 @@ def cmd_commit(args):
     if cutoff.tzinfo is None: raise ValueError("scheduled_cutoff_utc must include Z or an explicit UTC offset")
     cutoff_utc=cutoff.astimezone(dt.timezone.utc)
     validate_seed_provenance(obj, cutoff_utc)
+    validate_history_audit(obj)
     if dt.datetime.now(dt.timezone.utc) >= cutoff_utc:
         raise ValueError("forecast cutoff has passed; this record cannot enter the confirmatory cohort")
     if obj.get("draw_id")!=draw or obj.get("experiment_id")!=exp:
