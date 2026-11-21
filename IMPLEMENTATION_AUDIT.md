@@ -39,3 +39,12 @@ The implemented C/D random stream is SHA-256 counter mode with rejection-based r
 7. Independently timestamp the activation record and every forecast commitment before the official draw cutoff.
 
 No claim of predictive edge, adequate power, official history completeness, or experiment activation is made.
+
+
+## Addendum — verification after this audit (2026-11-21)
+
+- GitHub Actions run #20: SUCCESS. Both `unit-tests (3.11)` and `unit-tests (3.12)` completed successfully. Run: https://github.com/wxgzlj/-dlt-pi-200/actions/runs/44915210201
+- The passing suite currently contains six basic unit tests across `tests/test_generator.py` and `tests/test_pi_digits.py`. This does not establish full integration correctness, seed anti-reroll, commit/reveal tamper resistance, historical data completeness, or statistical power.
+- The 600,000-digit π manifest is present. It records an independent reproduction in CPython 3.13.5, not a clean run of the repository generator; local regeneration and SHA-256 comparison remain required.
+- `src/README.md` contained an obsolete 1,000,000-digit command; it is being corrected to the approved 600,000-digit value.
+- Seed-shopping prevention and the power/inference implementation remain CRITICAL blockers. Confirmatory cohort remains 0/200.
