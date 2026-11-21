@@ -1,5 +1,5 @@
 import unittest
-from generate_forecast import HashStream, map_window, sample_without_replacement, weighted_without_replacement
+from src.generate_forecast import HashStream, map_window, sample_without_replacement, weighted_without_replacement
 
 class TestGenerator(unittest.TestCase):
     def test_hash_stream_reproducible(self):
