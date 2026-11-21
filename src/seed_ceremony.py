@@ -45,6 +45,11 @@ def main():
 
     PRIVATE.mkdir(parents=True, exist_ok=True, mode=0o700)
     PUBLIC.mkdir(parents=True, exist_ok=True)
+    # Restrict the private directory before creating any seed or lock file.
+    try:
+        os.chmod(PRIVATE, 0o700)
+    except OSError:
+        pass
     seed_path = PRIVATE / f"{args.draw_id}.seed"
     public_path = PUBLIC / f"{args.draw_id}.json"
 
@@ -62,10 +67,6 @@ def main():
             f.write(canonical(lock_record) + b"\n"); f.flush(); os.fsync(f.fileno())
     except FileExistsError:
         raise SystemExit("SEED_CEREMONY_ALREADY_EXISTS: do not create or select a replacement seed")
-    try:
-        os.chmod(PRIVATE, 0o700)
-    except OSError:
-        pass
     # Do not remove the lock if either write fails. Never reroll after failure.
     seed = secrets.token_bytes(32)
     seed_hex = seed.hex()
