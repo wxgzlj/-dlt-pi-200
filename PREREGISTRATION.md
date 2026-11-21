@@ -74,7 +74,7 @@ Approved minimum effect of interest: +0.10 mean front-zone hits per ticket versu
 
 Every result must preserve draw ID, date, front/back numbers, official source URL, retrieval time UTC, raw source snapshot and SHA-256. Status values: VERIFIED / USER_SUPPLIED_PENDING_VERIFICATION / MISSING / CORRECTED.
 
-For model C, each forecast must include a historical data snapshot hash and prove every included draw was officially published before the forecast cutoff. No future result, post-cutoff correction, or incomplete record may enter the feature history.
+For model C, each forecast must include a historical data snapshot hash and prove the complete snapshot retrieval finished before the forecast cutoff. The snapshot completion timestamp is an availability proxy, not the original publication time of each historical draw. No future result, post-cutoff correction, or incomplete record may enter the feature history.
 
 ## 9. Commit–reveal
 
