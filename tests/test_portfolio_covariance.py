@@ -48,6 +48,18 @@ class TestPortfolioCovariance(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "duplicate ticket"):
             validate_front_portfolio(tickets)
 
+    def test_panel_rejects_duplicate_draw_ids(self):
+        tickets = ten_tickets()
+        base = {
+            "experiment_id": "DLT-PI-200",
+            "draw_id": "SYNTH-0",
+            "tickets": {m: tickets for m in ("A", "B1", "B2", "C", "D")},
+        }
+        payloads = [dict(base, draw_id=f"SYNTH-{i}") for i in range(200)]
+        payloads[1]["draw_id"] = "SYNTH-0"
+        with self.assertRaisesRegex(ValueError, "duplicate draw_id"):
+            analyze_panel(payloads)
+
     def test_panel_requires_200_payloads(self):
         payload = {
             "experiment_id": "DLT-PI-200",
