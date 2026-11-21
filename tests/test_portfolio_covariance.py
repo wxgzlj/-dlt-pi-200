@@ -11,6 +11,25 @@ def ten_tickets():
     return [{"front": list(c)} for c in list(itertools.combinations(range(1, 36), 5))[:10]]
 
 
+def payload(draw_id="SYNTH-1"):
+    tickets = ten_tickets()
+    return {
+        "experiment_id": "DLT-PI-200",
+        "draw_id": draw_id,
+        "models": ["A", "B1", "B2", "C", "D"],
+        "tickets_per_model": 10,
+        "code_sha256": "1" * 64,
+        "analysis_plan_sha256": "2" * 64,
+        "pi_source_sha256": "3" * 64,
+        "historical_snapshot_sha256": "4" * 64,
+        "history_audit_sha256": "5" * 64,
+        "history_snapshot_completed_at_utc": "2026-11-21T12:00:00Z",
+        "game_rules_id": "DLT-5x35-2x12-2026-revision",
+        "parameters": {"pi_block_length": 6, "pi_window_digits": 2048},
+        "tickets": {m: tickets for m in ("A", "B1", "B2", "C", "D")},
+    }
+
+
 class TestPortfolioCovariance(unittest.TestCase):
     def test_exact_covariance_matches_exhaustive_small_population(self):
         x = [0, 1, 2, 0, 3, 1]
@@ -31,12 +50,7 @@ class TestPortfolioCovariance(unittest.TestCase):
         self.assertAlmostEqual(score_mean(e), 5/7, places=12)
 
     def test_identical_model_portfolios_have_zero_paired_difference_variance(self):
-        tickets = ten_tickets()
-        payload = {
-            "experiment_id": "DLT-PI-200",
-            "draw_id": "SYNTH-1",
-            "tickets": {m: tickets for m in ("A", "B1", "B2", "C", "D")},
-        }
+        payload = payload()
         result = analyze_payload(payload)
         for row in result["paired_difference_covariance_matrix"]:
             for value in row:
@@ -49,23 +63,21 @@ class TestPortfolioCovariance(unittest.TestCase):
             validate_front_portfolio(tickets)
 
     def test_panel_rejects_duplicate_draw_ids(self):
-        tickets = ten_tickets()
-        base = {
-            "experiment_id": "DLT-PI-200",
-            "draw_id": "SYNTH-0",
-            "tickets": {m: tickets for m in ("A", "B1", "B2", "C", "D")},
-        }
+        base = payload("SYNTH-0")
         payloads = [dict(base, draw_id=f"SYNTH-{i}") for i in range(200)]
         payloads[1]["draw_id"] = "SYNTH-0"
         with self.assertRaisesRegex(ValueError, "duplicate draw_id"):
             analyze_panel(payloads)
 
+    def test_panel_rejects_mixed_code_provenance(self):
+        base = payload("SYNTH-0")
+        payloads = [dict(base, draw_id=f"SYNTH-{i}") for i in range(200)]
+        payloads[50] = dict(payloads[50], code_sha256="9" * 64)
+        with self.assertRaisesRegex(ValueError, "mixes frozen provenance"):
+            analyze_panel(payloads)
+
     def test_panel_requires_200_payloads(self):
-        payload = {
-            "experiment_id": "DLT-PI-200",
-            "draw_id": "SYNTH-1",
-            "tickets": {m: ten_tickets() for m in ("A", "B1", "B2", "C", "D")},
-        }
+        payload = payload()
         with self.assertRaisesRegex(ValueError, "exactly 200"):
             analyze_panel([payload])
 
