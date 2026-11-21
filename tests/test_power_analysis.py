@@ -55,6 +55,7 @@ class TestPowerAnalysis(unittest.TestCase):
             "draw_count": 200,
             "paired_difference_models": ["A", "B1", "B2", "C"],
             "average_per_draw_paired_difference_covariance": matrix,
+            "parameters_sha256": "8" * 64,
             "frozen_provenance": {
                 "code_sha256": current_source_hash(),
                 "analysis_plan_sha256": hashlib.sha256(Path("PREREGISTRATION.md").read_bytes()).hexdigest(),
