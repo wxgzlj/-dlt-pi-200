@@ -119,3 +119,10 @@ Economic value additionally requires official ticket costs, prize tiers, payouts
 - [ ] First forecast committed and independently timestamped before cutoff
 
 Until complete: DRAFT — NOT ACTIVE.
+
+
+### Preliminary power result — does not close the activation gate
+
+A parametric reference power analysis is now published in `POWER_ANALYSIS_PLAN.md` and `results/power_analysis_preliminary.json`. It ran 100,000 Monte Carlo replicates per scenario using the registered 200-draw horizon, +0.10 MDE and four-comparison Holm procedure. Under the idealized independent-uniform-portfolio variance reference, estimated target-comparison power was 96.213%. With 1.50× reference noise, it fell to 63.642%.
+
+This is **not** certification that DLT-PI-200 is adequately powered: the deterministic A/B1/B2 portfolios share π windows, and the actual C/D portfolio exposure covariance has not been calibrated. The confirmatory test and confidence-interval method also remain to be frozen. The power-analysis activation checklist item therefore remains open.
