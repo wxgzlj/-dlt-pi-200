@@ -266,7 +266,7 @@ def main():
     ap.add_argument("--power-plan",default="POWER_ANALYSIS_PLAN.md")
     ap.add_argument("--portfolio-covariance",help="200-payload output from portfolio_covariance.py")
     ap.add_argument("--target-model",choices=("A","B1","B2","C"),default="A")
-    ap.add_argument("--preregistration-commit",default="d64002531a9a6661c533cb47acdc48d8a89e2ead")
+    ap.add_argument("--preregistration-commit",default="ea29710ab5b1f51ef179ef5b07c1493514f747bb")
     ap.add_argument("--allow-small-run",action="store_true")
     a=ap.parse_args()
     if a.simulations<100000 and not a.allow_small_run: ap.error("at least 100,000 simulations per scenario required")
