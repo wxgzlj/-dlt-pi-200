@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """Fetch all available Super Lotto draws from the official Sports Lottery API.
 
-The API snapshot retrieval time is recorded as published_at_utc for every row.
-This is deliberately conservative: a snapshot can only be used for forecasts
-whose cutoff is later than the snapshot retrieval time. Never backdate rows.
+The snapshot completion time is recorded as snapshot_retrieved_at_utc for every
+row. This is a conservative availability proxy, not the original publication
+time. A snapshot is usable only when completion strictly precedes the forecast
+cutoff. Page 1 is rechecked to detect pagination drift during retrieval.
 """
 from __future__ import annotations
 import argparse, csv, datetime as dt, hashlib, json, time
@@ -64,7 +65,8 @@ def main():
     if not 1<=args.page_size<=5000 or args.delay<0:
         raise ValueError("invalid page size or delay")
     out=Path(args.output_dir); rawdir=out/"raw"
-    if (out/"manifest.json").exists() or (out/"history_snapshot.csv").exists() or list(rawdir.glob("page_*.json")) if rawdir.exists() else False:
+    existing_raw_pages=list(rawdir.glob("page_*.json")) if rawdir.exists() else []
+    if (out/"manifest.json").exists() or (out/"history_snapshot.csv").exists() or existing_raw_pages:
         raise FileExistsError("snapshot output already exists; choose a new timestamped --output-dir, never overwrite a prior snapshot")
     rawdir.mkdir(parents=True,exist_ok=True)
     retrieval_started=dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds").replace("+00:00","Z")
@@ -108,7 +110,7 @@ def main():
     bundle={"source":"official_sporttery_api","retrieval_started_at_utc":retrieval_started,
             "snapshot_completed_at_utc":snapshot_time,"page_hashes":page_hashes,
             "page_1_stability_check":{"re_fetched":True,"signature_matches":True,"verification_url":verify_url}}
-    (out/"source_bundle.json").write_text(json.dumps(bundle,ensure_ascii=False,sort_keys=True,indent=2)+"\\n",encoding="utf-8")
+    (out/"source_bundle.json").write_text(json.dumps(bundle,ensure_ascii=False,sort_keys=True,indent=2)+"\n",encoding="utf-8")
     manifest={"source":"official_sporttery_api","endpoint":API,"gameNo":"85",
               "retrieval_started_at_utc":retrieval_started,"snapshot_completed_at_utc":snapshot_time,
               "snapshot_time_utc":snapshot_time,"draw_count":len(rows),
