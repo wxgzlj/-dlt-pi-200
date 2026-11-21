@@ -1,0 +1,8 @@
+__pycache__/
+*.py[cod]
+data/pi_digits_*.txt
+data/history_snapshot/
+prospective-ledger.jsonl
+prospective-vault/
+*.sealed.json
+*.nonce
