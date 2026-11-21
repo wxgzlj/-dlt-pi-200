@@ -71,8 +71,18 @@ def verify(bundle: Path) -> dict:
     manifest_path=bundle/"evidence_manifest.json"
     manifest=json.loads(manifest_path.read_text(encoding="utf-8"))
     errors=[]
+    root=bundle.resolve()
+    seen=set()
+    if manifest.get("schema")!="DLT-PI-200-HISTORY-EVIDENCE-v1":
+        errors.append("unsupported_manifest_schema")
     for item in manifest.get("files",[]):
-        p=bundle/item["path"]
+        rel=Path(item.get("path",""))
+        if rel.is_absolute() or ".." in rel.parts or not rel.parts or item.get("path") in seen:
+            errors.append("unsafe_or_duplicate_path:"+str(item.get("path"))); continue
+        seen.add(item["path"])
+        p=(root/rel).resolve()
+        if root not in p.parents:
+            errors.append("path_escape:"+item["path"]); continue
         if not p.is_file(): errors.append("missing:"+item["path"]); continue
         if p.stat().st_size!=item["bytes"] or sha(p)!=item["sha256"]: errors.append("hash_or_size:"+item["path"])
     raw=manifest_path.read_bytes()
