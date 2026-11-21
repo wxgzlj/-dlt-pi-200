@@ -36,13 +36,13 @@ This is an exact reference variance under the stated random-portfolio assumption
 
 For planning, each comparison uses a draw-level paired Student t statistic with 199 degrees of freedom. The four p-values are adjusted using the exact Holm step-down algorithm. This is a planning approximation only; the final confirmatory inferential test (paired t, cluster bootstrap, or paired randomization) must be frozen in the preregistration before the first forecast.
 
-The joint simulation represents four candidate-minus-D comparisons with one shared D sample mean and D residual vector. Candidate residual vectors are mutually independent in the reference model. The resulting multivariate-t construction captures the shared-control dependence under those assumptions. It does not calibrate the extra dependence among A/B1/B2 caused by their shared π windows.
+The reference-only mode represents four candidate-minus-D comparisons with one shared D sample mean and residual vector; candidate residuals are mutually independent. The covariance-panel mode accepts the 4×4 average per-draw covariance emitted by `portfolio_covariance.py` and uses a multivariate-t/Wishart construction to retain the supplied cross-model dependence. Because it uses the average covariance as common across draws, draw-to-draw heteroskedasticity remains an approximation.
 
 ## 4. Alternative and limitations
 
 The alternative is a **draw-level location shift**: one candidate's paired difference has its mean shifted by the specified effect while the reference noise scale is retained. This is a statistical power scenario, not a physically specified lottery mechanism, not a claim that a model can create the shift, and not evidence of predictive ability.
 
-Power is estimated for one representative candidate-versus-D comparison while the other three comparisons remain null. Model-specific powers are treated as exchangeable only for this reference scenario; actual portfolio exposure profiles may differ.
+Power is estimated for one representative candidate-versus-D comparison while the other three comparisons remain null. In reference-only mode, model-specific powers are treated as exchangeable. In covariance-panel mode, `--target-model A|B1|B2|C` selects the focal comparison and the supplied matrix captures model-specific variance/correlation under the uniform-draw null.
 
 A sensitivity analysis multiplies the reference standard deviation by 1.25, 1.50 and 2.00. This directly tests how fragile the 80% target is to underestimation of portfolio-level noise.
 
@@ -80,8 +80,8 @@ The reference model exceeds 80% power at the registered MDE. However, a 50% incr
 Before activation:
 1. Freeze the exact confirmatory test and confidence-interval method.
 2. Generate a synthetic portfolio panel using the exact frozen A/B1/B2/C/D code, with a verified C-history snapshot and precommitted seed rules.
-3. Compute model-specific draw-level exposure variance and cross-comparison covariance.
-4. Re-run power analysis with those empirical design quantities and retain this reference analysis as a sensitivity benchmark.
+3. Run `src/portfolio_covariance.py` on the 200 frozen forecast payloads to compute model-specific draw-level exposure variance and the full 4×4 cross-comparison covariance.
+4. Run `src/power_analysis.py --portfolio-covariance results/portfolio_covariance.json --target-model A` (and repeat for B1, B2, C) to estimate focal-model power with the supplied covariance matrix; retain the reference analysis as a sensitivity benchmark.
 5. Do not change the approved 200-draw horizon or +0.10 MDE if power is inadequate; report the limitation.
 
 No predictive edge, adequate power, or economic value is established by this report.
@@ -89,4 +89,4 @@ No predictive edge, adequate power, or economic value is established by this rep
 
 ## Automated reproduction
 
-The repository workflow `.github/workflows/power-analysis.yml` reruns the 100,000-replicate-per-scenario analysis on CPython 3.12, runs the test file through unittest discovery, uploads the JSON artifact, and commits the generated report. The committed JSON is the canonical runtime-specific output; this document's preliminary numeric table must be reconciled to that output before the report is treated as final planning evidence.
+The repository workflow `.github/workflows/power-analysis.yml` reruns the 100,000-replicate-per-scenario analysis on CPython 3.12, runs the test file through unittest discovery, uploads the JSON artifact, and commits the generated report. The committed JSON is the reference-only baseline report generated before covariance-panel mode was added. Its embedded source hash identifies that historical implementation. The current engine additionally accepts a 200-payload covariance report; no such real panel has yet been supplied or analyzed.
