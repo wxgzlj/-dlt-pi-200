@@ -93,3 +93,14 @@ CI runs #25 and #26 completed successfully on the generator/seed-ceremony commit
 - Remaining critical blockers: execute and audit the 100,000+ simulation power study; retrieve and continuity-audit official history; run complete generator/commit/reveal/verify and tamper integration tests; independently verify timestamp anchors; freeze runtime; and publish a separately anchored activation record.
 
 Confirmatory cohort remains **0/200**; no forecast has been committed for the confirmatory cohort.
+
+## Addendum — preliminary Monte Carlo power engine (2026-11-21)
+
+- Added `src/power_analysis.py`, `tests/test_power_analysis.py`, `POWER_ANALYSIS_PLAN.md`, and `results/power_analysis_preliminary.json`.
+- The simulation ran **100,000 replicates per scenario** (five effect levels plus three noise-inflation scenarios; 800,000 experiments total), CPython 3.13.5, `random.Random` MT19937, base seed `2026112101`.
+- Reference variance is derived from Hypergeometric(35,5,5), with a finite-population correction for ten distinct tickets sampled from the 324,632 legal front-zone combinations. Under independent uniform candidate/D portfolio assumptions, paired draw-level SD = 0.3286942.
+- At the registered +0.10 MDE, estimated target-comparison power is 96.213% (95% Wilson Monte Carlo interval 96.093%–96.330%). Simulated null family rejection rate is 4.347% (95% Wilson interval 4.222%–4.475%).
+- Sensitivity: at 1.25×, 1.50× and 2.00× reference SD, MDE power is 82.291%, 63.642% and 35.911%, respectively.
+- Local power-engine tests: 5/5 passed on CPython 3.13.5. GitHub Actions execution for the new workflow/test combination has not yet been independently inspected; do not mark CI PASS.
+- Provenance: source SHA-256 `2983612aa9b810a04c52b4ba47d4ddf1aa7fc1b2b286ce5f5ed22be40af6080a`; power-plan SHA-256 `8c2fbc79bb9047fa8805b7d45e00dbb3f1abbe46d03fb3b9adb19a1fc75fe465`; preregistration reference commit `d64002531a9a6661c533cb47acdc48d8a89e2ead`.
+- Critical limitations: this is a parametric location-shift planning model, not a physical lottery alternative or backtest. It assumes independent candidate residual vectors; it does not calibrate A/B1/B2 dependence induced by shared π windows or actual C/D portfolio exposure. Final confirmatory test and CI method remain unfrozen. **Power adequacy remains NOT CERTIFIED; cohort remains 0/200.**
