@@ -63,8 +63,9 @@ def build(snapshot: Path, audit_path: Path, output: Path) -> dict:
     }
     raw=canonical(manifest)
     (output/"evidence_manifest.json").write_bytes(raw+b"\n")
-    (output/"evidence_manifest.sha256").write_text(hashlib.sha256(raw).hexdigest()+"  evidence_manifest.json\n",encoding="ascii")
-    return {"status":"BUILT","manifest_sha256":hashlib.sha256(raw).hexdigest(),"files":len(files),"draw_count":manifest["draw_count"]}
+    digest=hashlib.sha256(raw+b"\n").hexdigest()
+    (output/"evidence_manifest.sha256").write_text(digest+"  evidence_manifest.json\n",encoding="ascii")
+    return {"status":"BUILT","manifest_sha256":digest,"files":len(files),"draw_count":manifest["draw_count"]}
 
 def verify(bundle: Path) -> dict:
     manifest_path=bundle/"evidence_manifest.json"
@@ -74,7 +75,7 @@ def verify(bundle: Path) -> dict:
         p=bundle/item["path"]
         if not p.is_file(): errors.append("missing:"+item["path"]); continue
         if p.stat().st_size!=item["bytes"] or sha(p)!=item["sha256"]: errors.append("hash_or_size:"+item["path"])
-    raw=canonical(manifest)
+    raw=manifest_path.read_bytes()
     digest=hashlib.sha256(raw).hexdigest()
     expected=(bundle/"evidence_manifest.sha256").read_text(encoding="ascii").split()[0]
     if digest!=expected: errors.append("manifest_hash_mismatch")
