@@ -29,8 +29,10 @@ def validate_history_audit(obj):
         raise ValueError("history audit report hash mismatch")
     if audit.get("status")!="PASS" or audit.get("errors") or audit.get("warnings"):
         raise ValueError("history audit must have PASS status and no errors/warnings")
-    if audit.get("continuity_status")!="VERIFIED_AGAINST_OFFICIAL_CALENDAR" or not audit.get("calendar_attestation_sha256"):
-        raise ValueError("history audit is missing its verified official draw-calendar attestation")
+    if (audit.get("continuity_status")!="VERIFIED_AGAINST_OFFICIAL_CALENDAR"
+            or not audit.get("calendar_attestation_sha256")
+            or not audit.get("calendar_source_document_sha256")):
+        raise ValueError("history audit is missing its verified official calendar/raw source hashes")
     if audit.get("csv_sha256_computed")!=obj["historical_snapshot_sha256"]:
         raise ValueError("history audit does not bind the forecast history CSV hash")
     if audit.get("draw_count")!=obj["historical_draw_count"]:
