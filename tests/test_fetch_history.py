@@ -1,4 +1,5 @@
 import csv
+import hashlib
 import json
 import sys
 import tempfile
@@ -58,10 +59,14 @@ class TestFetchHistory(unittest.TestCase):
         with (self.out / "history_snapshot.csv").open("r", encoding="utf-8", newline="") as f:
             rows = list(csv.DictReader(f))
         calendar_path = self.out / "calendar_attestation.json"
+        calendar_source = b"synthetic official calendar fixture; test-only"
+        (self.out / "calendar_source.html").write_bytes(calendar_source)
         calendar_path.write_text(json.dumps({
             "status": "VERIFIED",
             "source_url": "https://www.sporttery.cn/official/dlt-calendar",
             "retrieved_at_utc": "2098-12-31T23:00:00Z",
+            "source_document_file": "calendar_source.html",
+            "source_document_sha256": hashlib.sha256(calendar_source).hexdigest(),
             "draw_records": [{"draw_id": row["draw_id"], "draw_date": row["draw_date"]} for row in rows],
         }))
         result = audit_snapshot(self.out, "2099-01-01T00:00:00Z", calendar_path)
