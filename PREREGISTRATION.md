@@ -1,135 +1,119 @@
 # DLT-PI-200 Preregistration
 
-**Status: DRAFT — NOT ACTIVE.** This document is the proposed protocol. It becomes frozen only after the activation commit explicitly identifies its Git commit SHA and the required supporting artifacts.
+**Status: DRAFT — NOT ACTIVE.** The following protocol is proposed and must be explicitly approved and frozen by an activation commit before the first confirmatory forecast.
 
 ## 1. Research question
 
-Do the registered π-derived procedures A, B1, B2, or historical-frequency procedure C outperform a matched uniform-random control D in the number of front-zone hits per ticket on future China Super Lotto draws?
+Do registered π-derived procedures A, B1, B2, or historical-frequency procedure C outperform a matched uniform-random control D in front-zone hits per ticket on future China Super Lotto draws?
 
-This is a test of prospective predictive performance, not a test proving π is normal or a source of independent randomness.
+This tests prospective predictive performance. It does not prove π is normal or a source of independent randomness.
 
-## 2. Game and baseline
+## 2. Official game specification
 
-Planned game format: 5 distinct front numbers from 01–35 and 2 distinct back numbers from 01–12. This format and the current official rules/prize schedule must be verified against an authoritative lottery source before activation.
+The official Sports Lottery rules specify 5 distinct front numbers from 01–35 and 2 distinct back numbers from 01–12. Basic ticket price is RMB 2. The 2026 rule revision was approved by the Ministry of Finance and took effect from draw 26014 (2026-01-31).
 
-Under the stated fair-draw format:
+Sources:
+- Official rules page: https://m.lottery.gov.cn/ksjz/m/yxgz_dlt/
+- Ministry of Finance approval, 财综〔2025〕51号: https://www.mof.gov.cn/gp/xxgkml/zhs/202601/t20260116_3982042.htm
+- Sports Lottery Center rule-change notice: https://www.gstc.org.cn/newsDetail/010600/77722
+
+Under this 5/35 + 2/12 format:
 - Valid combinations: C(35,5) × C(12,2) = 21,425,712.
-- Jackpot probability for one distinct ticket: 1 / 21,425,712.
+- Jackpot probability for one distinct ticket under a fair draw: 1 / 21,425,712.
 - Expected front hits per ticket: 5/7 = 0.7142857.
 - Expected back hits per ticket: 1/3 = 0.3333333.
 
-These are mathematical baselines conditional on the stated game format and fair independent draws, not observed model performance.
+Prize-tier/payout analysis is outside the primary endpoint and requires the current official prize schedule and draw-specific payout records. No ROI or expected-value claim is permitted without those data and player-choice / prize-sharing inputs.
 
 ## 3. Cohort and budget
 
 - Experiment ID: DLT-PI-200.
-- Horizon: 200 consecutive eligible future draws, beginning with the first eligible draw after the activation commitment has been independently timestamped.
+- Horizon: 200 consecutive eligible future draws, beginning with the first eligible draw after the activation commitment is independently timestamped.
 - Five models: A, B1, B2, C, D.
 - Ten distinct tickets per model per draw; 50 tickets per draw.
 - No model receives extra tickets, replacement seeds, or selective reruns.
 - No historical draw is part of the confirmatory cohort.
-- Draw 26133 is excluded from the prospective cohort because no complete pre-draw five-model forecast and independent commitment was recorded.
+- Draw 26133 is excluded because no complete pre-draw five-model forecast and independent commitment was recorded.
 
-The scheduled draw register must be populated from the official calendar at activation. Postponed, cancelled, delayed, corrected, or unavailable draws remain in the register with explicit statuses; no silent substitution or deletion is allowed. The exact calendar extension rule must be frozen before activation.
+The official draw calendar must be archived at activation. Every scheduled draw remains in the ledger with explicit status. Cancelled/postponed/missing draw treatment must follow a frozen rule; no silent substitution or deletion.
 
-## 4. Models
+## 4. Proposed frozen model parameters
 
-See MODEL_REGISTRY.md. Exact algorithm parameters, source intervals, random seeds, software versions, and code hashes remain activation blockers until specified and committed.
+See MODEL_REGISTRY.md and PARAMETER_DECISIONS.md. Parameters are proposals, not active until explicitly approved and recorded in the activation commit.
 
 ## 5. Endpoints
 
-### Primary endpoint
-For each draw and model, calculate the mean number of front-zone matches across that model's 10 tickets. Compare each of A/B1/B2/C against D using paired draw-level differences. The inferential unit is the draw, not the individual ticket.
+### Primary
+For each draw and model, calculate the mean front-zone matches across the model's 10 tickets. Compare A-D, B1-D, B2-D and C-D using paired draw-level differences. The inferential unit is the draw, not the individual ticket.
 
-### Secondary endpoint
+### Secondary
 Mean back-zone matches per ticket, aggregated within draw first. Analyze as a separate family with Holm correction.
 
-### Descriptive endpoints
-- Full match-count distributions by zone
-- Prize-tier counts, only after official prize rules are verified
-- Number of unique tickets within each model
-- Number of unique tickets across all models
-- Any-prize frequency, clearly descriptive and not equivalent to profitability
+### Descriptive
+Full hit-count distributions, ticket duplication, number exposure, and portfolio overlap. Portfolio diversity is not predictive advantage.
 
 ## 6. Confirmatory tests
 
 - Four primary comparisons: A-D, B1-D, B2-D, C-D.
 - Two-sided family-wise alpha = 0.05.
-- Holm step-down correction across the four primary comparisons.
+- Holm step-down correction across four primary comparisons.
 - Secondary back-zone family: same four comparisons, separately Holm-adjusted.
-- Report paired effect sizes, 95% confidence intervals, raw p-values, adjusted p-values, and all draw-level observations.
-- Use a draw-cluster paired randomization test or draw-cluster bootstrap; specify and freeze the exact implementation before activation.
-- Do not treat the 10 tickets within a draw as independent observations.
-- No interim efficacy testing and no early stopping for apparent success or failure.
+- Report paired effect sizes, 95% confidence intervals, raw p-values and adjusted p-values.
+- Use a draw-cluster paired randomization test or draw-cluster bootstrap; exact implementation must be frozen before activation.
+- No interim efficacy testing and no early stopping.
 
-## 7. Power analysis — required before activation
+## 7. Power analysis — activation blocker
 
-A 200-draw horizon is fixed by design, but sufficiency is not assumed. Before activation, run reproducible simulation-based power analysis for a predeclared minimum effect of interest, using the draw-level endpoint, four-comparison multiplicity correction, and plausible within-draw dependence. Publish the code, PRNG, seed, simulation count, Monte Carlo standard error, and results. If power is low, retain the 200-draw design and label it underpowered rather than silently changing the horizon or endpoint.
+The 200-draw horizon is fixed, but adequacy is not assumed. Before activation, run reproducible simulation-based power analysis for a predeclared minimum effect of interest, using draw-level paired endpoints, four-comparison Holm correction, and realistic within-draw ticket dependence. Publish code, PRNG, seed, simulation count, Monte Carlo error and power curve.
 
-The minimum effect of interest and power target must be declared before activation. They are currently **MISSING**.
+Minimum effect of interest and target power are not yet approved. Do not describe the study as adequately powered until this analysis exists.
 
 ## 8. Data and verification
 
-For every official result preserve:
-- draw ID and scheduled/actual draw date
-- front and back results
-- official source URL and retrieval timestamp (UTC)
-- raw response or source-file snapshot
-- SHA-256 of the raw snapshot
-- status: VERIFIED / USER_SUPPLIED_PENDING_VERIFICATION / MISSING / CORRECTED
-- correction history, if any
+Every result must preserve draw ID, date, front/back numbers, official source URL, retrieval time UTC, raw source snapshot and SHA-256. Status values: VERIFIED / USER_SUPPLIED_PENDING_VERIFICATION / MISSING / CORRECTED.
 
-User-pasted results remain USER_SUPPLIED_PENDING_VERIFICATION until independently matched to an authoritative official source.
+For model C, each forecast must include a historical data snapshot hash and prove every included draw was officially published before the forecast cutoff. No future result, post-cutoff correction, or incomplete record may enter the feature history.
 
-## 9. Commit–reveal procedure
+## 9. Commit–reveal
 
 Before each draw cutoff:
-1. Generate all 50 tickets in one run using frozen code and parameters.
-2. Validate ticket counts, number ranges, within-zone uniqueness, and within-model ticket uniqueness.
-3. Create canonical UTF-8 JSON with sorted keys and compact separators.
+1. Generate all 50 tickets with frozen code and parameters.
+2. Validate exact counts, number ranges, within-zone uniqueness and within-model ticket uniqueness.
+3. Serialize canonical UTF-8 JSON with sorted keys and compact separators.
 4. Generate a cryptographically random 32-byte nonce.
-5. Compute SHA-256 over canonical JSON bytes concatenated with nonce bytes, according to the exact encoding specified in LEDGER_SCHEMA.md.
-6. Publish the commitment and payload-file hash in this public repository before cutoff.
-7. Keep payload and nonce unavailable for editing; reveal only after the official result is published.
+5. Compute SHA-256 over canonical payload bytes concatenated with raw nonce bytes.
+6. Publish commitment and payload hash in this repository before cutoff.
+7. Preserve payload and nonce; reveal only after official result publication.
 
-After the official result:
-1. Add official result metadata and source snapshot hash.
-2. Reveal the exact payload and nonce.
-3. Recompute and verify the commitment.
-4. Score every ticket and report all models.
-5. Append a new audit record; never replace the commitment.
+After result publication, append official source metadata, reveal payload and nonce, recompute the commitment, and score every ticket. Never replace a commitment. GitHub alone is not a fully independent immutable archive; mirror each commitment to a second timestamp / append-only service.
 
-GitHub public commits provide a visible timestamped trail but are not a fully independent immutable archive because repository history can be rewritten by an administrator. For stronger anchoring, mirror each commitment to a second independent timestamp service or public append-only system before the draw.
+## 10. Missingness and deviations
 
-## 10. Missingness, corrections, and deviations
-
-All scheduled cohort rows remain visible. Missing/cancelled/postponed results are not silently dropped or replaced. Any protocol deviation is logged with date, reason, affected draw, and impact. No retroactive forecast generation, seed shopping, parameter tuning, or selective exclusion is permitted.
+All scheduled cohort rows remain visible. Missing, delayed, cancelled, postponed, corrected or unavailable results receive explicit statuses. No draw may be silently removed or replaced. Any deviation is logged as a new event with reason and affected draw.
 
 ## 11. Decision language
 
-Final conclusions must use one of:
+Use one of:
 - NO EVIDENCE OF EDGE
 - EXPLORATORY SIGNAL ONLY
 - OUT-OF-SAMPLE EDGE DETECTED BUT NOT ECONOMICALLY VALIDATED
 - ECONOMIC VALUE SUPPORTED UNDER STATED ASSUMPTIONS
 
-The final label requires complete data, multiplicity-adjusted evidence, robust draw-level inference, and independent validation. Economic value additionally requires official ticket costs, prize tiers, payouts, prize-pool allocation, and defensible player-choice distribution. Without these, mark EV_NOT_IDENTIFIABLE.
+Economic value additionally requires official ticket costs, prize tiers, payouts, prize-pool allocation, and defensible player-choice distribution. Otherwise: EV_NOT_IDENTIFIABLE.
 
 ## 12. Activation checklist
 
-- [ ] Official game rules verified and archived
-- [ ] Official draw schedule verified and archived
-- [ ] Model parameters fully specified
-- [ ] π source and digit offsets frozen; source hash recorded
-- [ ] Historical dataset and cutoff rules for C frozen
-- [ ] D PRNG, software version, seed-generation protocol and substreams frozen
-- [ ] Generator/auditor code and dependencies frozen
-- [ ] Code hash and environment manifest recorded
-- [ ] Minimum effect of interest and power target declared
+- [ ] User approves proposed exact parameters
+- [ ] Official rules and draw schedule archived
+- [ ] Complete historical result dataset verified for C
+- [ ] π digit generator and source prefix test pass
+- [ ] D/C seed derivation and PRNG implementation frozen
+- [ ] Generator/auditor code and runtime frozen
+- [ ] Minimum effect and target power declared
 - [ ] Power analysis published
 - [ ] Statistical test implementation frozen
-- [ ] Ledger schema and canonicalization test vectors published
+- [ ] Canonicalization test vectors pass
 - [ ] Activation commit SHA recorded
-- [ ] First draw forecast committed and independently timestamped before cutoff
+- [ ] First forecast committed and independently timestamped before cutoff
 
-Until every required item is checked, status remains DRAFT — NOT ACTIVE.
+Until complete: DRAFT — NOT ACTIVE.
