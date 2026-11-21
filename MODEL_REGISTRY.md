@@ -23,7 +23,7 @@ Each model produces exactly 10 distinct tickets per eligible draw. Ticket format
 - No parameter tuning during the cohort.
 
 ## C — historical-frequency weighted sampler
-- Input: official draw-history CSV snapshot, only records published before the forecast cutoff.
+- Input: one official draw-history CSV snapshot whose complete retrieval finished strictly before the forecast cutoff. `snapshot_retrieved_at_utc` is a conservative availability proxy, not each draw's original publication timestamp.
 - For each number i, integer weight w_i = c_i + 1, where c_i is the number of prior appearances in that zone.
 - Sequential probability-proportional-to-size sampling without replacement, separately for front (5 of 35) and back (2 of 12).
 - Integer weighted selection uses rejection-based randbelow; no floating-point cumulative-weight sampling.
@@ -35,7 +35,7 @@ Each model produces exactly 10 distinct tickets per eligible draw. Ticket format
 - PRNG: SHA-256 counter stream; `randbelow(n)` uses rejection sampling and ticket selection uses partial Fisher–Yates.
 - Per-draw root seed: 32 bytes from OS CSPRNG; separate derived streams for C and D.
 - Per-model sub-seeds: SHA-256 of root_seed || experiment_id || draw_id || model_id.
-- The root seed and derivation metadata are included in the committed payload. One-seed-per-draw public seed commitment and anti-reroll enforcement remain activation blockers.
+- The root seed and derivation metadata are included in the committed payload. One-seed-per-draw public commitment, persistent fail-closed lock and ledger-level consistency checks are implemented; independent external-anchor authenticity is still manually verified and remains an activation blocker.
 
 ## π stream allocation proposal
 See PARAMETER_DECISIONS.md. Each ticket receives a fixed, disjoint 2,048-digit window; front and back zones occupy non-overlapping blocks. If a window is exhausted, generation fails closed; it must not silently jump to a new window.
