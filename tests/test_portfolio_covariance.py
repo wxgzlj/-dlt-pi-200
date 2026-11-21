@@ -50,8 +50,8 @@ class TestPortfolioCovariance(unittest.TestCase):
         self.assertAlmostEqual(score_mean(e), 5/7, places=12)
 
     def test_identical_model_portfolios_have_zero_paired_difference_variance(self):
-        payload = payload()
-        result = analyze_payload(payload)
+        sample = payload()
+        result = analyze_payload(sample)
         for row in result["paired_difference_covariance_matrix"]:
             for value in row:
                 self.assertAlmostEqual(value, 0.0, places=12)
@@ -77,9 +77,9 @@ class TestPortfolioCovariance(unittest.TestCase):
             analyze_panel(payloads)
 
     def test_panel_requires_200_payloads(self):
-        payload = payload()
+        sample = payload()
         with self.assertRaisesRegex(ValueError, "exactly 200"):
-            analyze_panel([payload])
+            analyze_panel([sample])
 
 
 if __name__ == "__main__":
