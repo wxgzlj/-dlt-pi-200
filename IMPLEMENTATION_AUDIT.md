@@ -140,3 +140,11 @@ Confirmatory cohort remains **0/200**; no forecast has been committed for the co
 - Added `tests/test_history_audit_gate.py` for generator and commit-layer acceptance/rejection cases. CI result remains to be independently inspected.
 - Updated `SEED_CEREMONY.md` and `LEDGER_SCHEMA.md` examples to require the audit report and seed provenance inputs.
 - Activation remains blocked until a real official snapshot is fetched into a fresh timestamped directory, audited with no unresolved warnings, and the audit-bound generator/commit/reveal path passes end-to-end tests. Confirmatory cohort remains 0/200.
+
+
+## Addendum — covariance-aware power simulation mode (2026-11-21)
+
+- `src/power_analysis.py` now accepts `--portfolio-covariance` from the 200-payload output of `src/portfolio_covariance.py` and `--target-model A|B1|B2|C` to run model-specific focal comparisons.
+- Added a positive-semidefinite Cholesky factorization and Bartlett/Wishart multivariate-t simulation so the supplied 4×4 covariance matrix informs both numerator dependence and studentized variance. The simulation uses average per-draw covariance as a common covariance; draw-to-draw heteroskedasticity remains an approximation.
+- Added tests for Cholesky reconstruction, non-PSD rejection, and deterministic covariance-aware simulation. Local isolated tests passed; GitHub Actions results remain unverified.
+- No real 200-payload panel has been generated because a verified history snapshot for C is still missing. The committed JSON remains the historical reference-only baseline, not a covariance-calibrated power report. Power adequacy remains NOT CERTIFIED; cohort remains 0/200.
