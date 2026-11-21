@@ -59,7 +59,7 @@ def main():
     try:
         fd = os.open(lock_path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
         with os.fdopen(fd, "wb") as f:
-            f.write(canonical(lock_record) + b"\\n"); f.flush(); os.fsync(f.fileno())
+            f.write(canonical(lock_record) + b"\n"); f.flush(); os.fsync(f.fileno())
     except FileExistsError:
         raise SystemExit("SEED_CEREMONY_ALREADY_EXISTS: do not create or select a replacement seed")
     try:
@@ -86,13 +86,13 @@ def main():
         fd = os.open(seed_path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
         seed_created = True
         with os.fdopen(fd, "w", encoding="ascii") as f:
-            f.write(seed_hex + "\\n")
+            f.write(seed_hex + "\n")
             f.flush()
             os.fsync(f.fileno())
         fd = os.open(public_path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o644)
         public_created = True
         with os.fdopen(fd, "wb") as f:
-            f.write(canonical(record) + b"\\n")
+            f.write(canonical(record) + b"\n")
             f.flush()
             os.fsync(f.fileno())
     except FileExistsError:
