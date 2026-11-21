@@ -10,6 +10,36 @@ EFFECTS = (0.0, 0.05, 0.10, 0.15, 0.20)
 COMB = math.comb(NNUM, K)
 
 
+def current_source_hash():
+    digest=hashlib.sha256()
+    for path in sorted(Path("src").glob("*.py")):
+        digest.update(path.name.encode("utf-8")+b"\\0"+path.read_bytes())
+    return digest.hexdigest()
+
+
+def validate_covariance_panel(panel):
+    if panel.get("status")!="COMPUTED_FROM_FIXED_PORTFOLIOS_UNDER_UNIFORM_DRAW_NULL":
+        raise ValueError("portfolio covariance input is not a verified computed panel")
+    if panel.get("draw_count")!=N:
+        raise ValueError("portfolio covariance panel must contain exactly 200 draws")
+    if panel.get("paired_difference_models")!=["A","B1","B2","C"]:
+        raise ValueError("portfolio covariance model order must be A,B1,B2,C")
+    provenance=panel.get("frozen_provenance")
+    required=("code_sha256","analysis_plan_sha256","pi_source_sha256",
+              "historical_snapshot_sha256","history_audit_sha256",
+              "history_snapshot_completed_at_utc","historical_draw_count","game_rules_id")
+    if not isinstance(provenance,dict) or any(not provenance.get(k) for k in required):
+        raise ValueError("portfolio covariance panel is missing frozen provenance")
+    if provenance["code_sha256"]!=current_source_hash():
+        raise ValueError("portfolio panel code hash does not match current frozen src/ tree")
+    prereg=Path("PREREGISTRATION.md")
+    if prereg.exists() and provenance["analysis_plan_sha256"]!=hashlib.sha256(prereg.read_bytes()).hexdigest():
+        raise ValueError("portfolio panel analysis-plan hash does not match current PREREGISTRATION.md")
+    matrix=panel.get("average_per_draw_paired_difference_covariance")
+    cholesky_psd(matrix)
+    return matrix
+
+
 def ticket_var():
     p = K / NNUM
     return K * p * (1-p) * ((NNUM-K)/(NNUM-1))
@@ -242,11 +272,10 @@ def main():
     covariance_source="REFERENCE_ANALYTIC"
     if a.portfolio_covariance:
         panel=json.loads(Path(a.portfolio_covariance).read_text(encoding="utf-8"))
-        if panel.get("draw_count")!=N or panel.get("paired_difference_models")!=["A","B1","B2","C"]:
-            ap.error("portfolio covariance must come from a 200-draw A/B1/B2/C panel")
-        covariance=panel.get("average_per_draw_paired_difference_covariance")
-        if not isinstance(covariance,list) or len(covariance)!=NTEST:
-            ap.error("portfolio covariance matrix must be 4x4")
+        try:
+            covariance=validate_covariance_panel(panel)
+        except Exception as exc:
+            ap.error(str(exc))
         covariance_source=hashlib.sha256(Path(a.portfolio_covariance).read_bytes()).hexdigest()
     out=report(a.simulations,a.seed,covariance,a.target_model,covariance_source)
     out["provenance"]={
