@@ -1,6 +1,8 @@
+import hashlib
 import unittest
+from pathlib import Path
 
-from src.power_analysis import cholesky_psd, holm, ibeta, paired_sd, simulate, simulate_covariance, t_p, ticket_var, wilson
+from src.power_analysis import cholesky_psd, current_source_hash, holm, ibeta, paired_sd, simulate, simulate_covariance, t_p, ticket_var, validate_covariance_panel, wilson
 
 
 class TestPowerAnalysis(unittest.TestCase):
@@ -44,6 +46,27 @@ class TestPowerAnalysis(unittest.TestCase):
         self.assertEqual(a, b)
         self.assertEqual(a["target_comparison"], "B1_vs_D")
         self.assertTrue(0.0 <= a["target_power"] <= 1.0)
+
+    def test_covariance_panel_provenance_validation(self):
+        v = paired_sd() ** 2
+        matrix = [[v if i == j else v / 2 for j in range(4)] for i in range(4)]
+        panel = {
+            "status": "COMPUTED_FROM_FIXED_PORTFOLIOS_UNDER_UNIFORM_DRAW_NULL",
+            "draw_count": 200,
+            "paired_difference_models": ["A", "B1", "B2", "C"],
+            "average_per_draw_paired_difference_covariance": matrix,
+            "frozen_provenance": {
+                "code_sha256": current_source_hash(),
+                "analysis_plan_sha256": hashlib.sha256(Path("PREREGISTRATION.md").read_bytes()).hexdigest(),
+                "pi_source_sha256": "3" * 64,
+                "historical_snapshot_sha256": "4" * 64,
+                "history_audit_sha256": "5" * 64,
+                "history_snapshot_completed_at_utc": "2026-11-21T12:00:00Z",
+                "historical_draw_count": 1200,
+                "game_rules_id": "DLT-5x35-2x12-2026-revision",
+            },
+        }
+        self.assertEqual(validate_covariance_panel(panel), matrix)
 
     def test_simulation_is_reproducible(self):
         a = simulate(500, 0.10, 1.0, 123456)
