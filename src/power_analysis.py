@@ -247,7 +247,7 @@ def main():
         covariance=panel.get("average_per_draw_paired_difference_covariance")
         if not isinstance(covariance,list) or len(covariance)!=NTEST:
             ap.error("portfolio covariance matrix must be 4x4")
-        covariance_source=sha(Path(a.portfolio_covariance).read_bytes())
+        covariance_source=hashlib.sha256(Path(a.portfolio_covariance).read_bytes()).hexdigest()
     out=report(a.simulations,a.seed,covariance,a.target_model,covariance_source)
     out["provenance"]={
         "source_code_sha256":hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
