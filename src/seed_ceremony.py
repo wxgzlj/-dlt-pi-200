@@ -80,19 +80,30 @@ def main():
         "algorithm": "SHA-256(seed_bytes)",
         "status": "AWAITING_EXTERNAL_TIMESTAMP_BEFORE_GENERATION"
     }
+    seed_created = False
+    public_created = False
     try:
         fd = os.open(seed_path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+        seed_created = True
         with os.fdopen(fd, "w", encoding="ascii") as f:
-            f.write(seed_hex + "\n")
+            f.write(seed_hex + "\\n")
             f.flush()
             os.fsync(f.fileno())
         fd = os.open(public_path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o644)
+        public_created = True
         with os.fdopen(fd, "wb") as f:
-            f.write(canonical(record) + b"\n")
+            f.write(canonical(record) + b"\\n")
             f.flush()
             os.fsync(f.fileno())
     except FileExistsError:
+        # Remove only files created by this invocation; preserve pre-existing files.
+        if public_created: public_path.unlink(missing_ok=True)
+        if seed_created: seed_path.unlink(missing_ok=True)
         raise SystemExit("SEED_CEREMONY_ALREADY_EXISTS: do not create or select a replacement seed")
+    except Exception:
+        if public_created: public_path.unlink(missing_ok=True)
+        if seed_created: seed_path.unlink(missing_ok=True)
+        raise
     print(json.dumps({
         "status": record["status"],
         "draw_id": args.draw_id,
