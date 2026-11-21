@@ -54,37 +54,66 @@ def make_snapshot(root):
         "page_1_stability_check": {"re_fetched": True, "signature_matches": True},
     }
     (root / "source_bundle.json").write_text(json.dumps(bundle), encoding="utf-8")
-    return csv_path, raw_dir / "page_0001.json"
+    calendar_path = root / "calendar_attestation.json"
+    calendar = {
+        "status": "VERIFIED",
+        "source_url": "https://www.sporttery.cn/official/dlt-calendar",
+        "retrieved_at_utc": "2026-11-21T12:10:00Z",
+        "draw_records": [
+            {"draw_id": "26130", "draw_date": "2026-11-18"},
+            {"draw_id": "26131", "draw_date": "2026-11-19"},
+        ],
+    }
+    calendar_path.write_text(json.dumps(calendar), encoding="utf-8")
+    return csv_path, raw_dir / "page_0001.json", calendar_path
 
 
 class TestHistoryAudit(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.root = Path(self.tmp.name)
-        self.csv_path, self.raw_path = make_snapshot(self.root)
+        self.csv_path, self.raw_path, self.calendar_path = make_snapshot(self.root)
 
     def tearDown(self):
         self.tmp.cleanup()
 
     def test_valid_snapshot_passes(self):
-        result = audit_snapshot(self.root, "2026-11-22T00:00:00Z")
+        result = audit_snapshot(self.root, "2026-11-22T00:00:00Z", self.calendar_path)
         self.assertEqual(result["status"], "PASS")
         self.assertEqual(result["draw_count"], 2)
         self.assertEqual(result["errors"], [])
 
     def test_snapshot_after_cutoff_fails(self):
-        result = audit_snapshot(self.root, "2026-11-21T11:00:00Z")
+        result = audit_snapshot(self.root, "2026-11-21T11:00:00Z", self.calendar_path)
         self.assertEqual(result["status"], "FAIL")
         self.assertTrue(any("at or after forecast cutoff" in e for e in result["errors"]))
 
     def test_csv_tampering_fails(self):
         self.csv_path.write_text(self.csv_path.read_text() + "\n", encoding="utf-8")
-        result = audit_snapshot(self.root)
+        result = audit_snapshot(self.root, calendar_attestation_path=self.calendar_path)
         self.assertTrue(any("CSV SHA-256" in e for e in result["errors"]))
+
+    def test_missing_calendar_attestation_is_not_full_pass(self):
+        result = audit_snapshot(self.root)
+        self.assertEqual(result["status"], "PASS_WITH_WARNINGS")
+        self.assertEqual(result["continuity_status"], "NOT_VERIFIED_OFFICIAL_CALENDAR_REQUIRED")
+
+    def test_calendar_mismatch_fails(self):
+        calendar = json.loads(self.calendar_path.read_text())
+        calendar["draw_records"] = calendar["draw_records"][:1]
+        self.calendar_path.write_text(json.dumps(calendar))
+        result = audit_snapshot(self.root, calendar_attestation_path=self.calendar_path)
+        self.assertEqual(result["status"], "FAIL")
+        self.assertTrue(any("do not exactly match" in e for e in result["errors"]))
+
+    def test_calendar_timestamp_must_precede_cutoff(self):
+        result = audit_snapshot(self.root, "2026-11-21T12:05:00Z", self.calendar_path)
+        self.assertEqual(result["status"], "FAIL")
+        self.assertTrue(any("calendar attestation was retrieved" in e for e in result["errors"]))
 
     def test_raw_page_tampering_fails(self):
         self.raw_path.write_bytes(self.raw_path.read_bytes() + b" ")
-        result = audit_snapshot(self.root)
+        result = audit_snapshot(self.root, calendar_attestation_path=self.calendar_path)
         self.assertTrue(any("raw page 1 SHA-256" in e for e in result["errors"]))
 
 
