@@ -100,6 +100,7 @@ def read_history(path: Path, cutoff: dt.datetime) -> tuple[dict[int,int],dict[in
     front_counts = {i:0 for i in range(1,36)}
     back_counts = {i:0 for i in range(1,13)}
     seen = set()
+    latest_publication = None
     with path.open("r", encoding="utf-8-sig", newline="") as f:
         reader = csv.DictReader(f)
         required = {"draw_id","published_at_utc","front","back"}
@@ -111,8 +112,10 @@ def read_history(path: Path, cutoff: dt.datetime) -> tuple[dict[int,int],dict[in
         if not draw or draw in seen:
             raise ValueError("history contains empty or duplicate draw_id")
         seen.add(draw)
-        if parse_utc(row["published_at_utc"]) >= cutoff:
+        publication_time = parse_utc(row["published_at_utc"])
+        if publication_time >= cutoff:
             raise ValueError(f"history row {draw} was not published strictly before forecast cutoff")
+        latest_publication = publication_time if latest_publication is None else max(latest_publication, publication_time)
         front = [int(x) for x in row["front"].replace(",", " ").split()]
         back = [int(x) for x in row["back"].replace(",", " ").split()]
         if len(front)!=5 or len(set(front))!=5 or any(x<1 or x>35 for x in front):
@@ -121,7 +124,8 @@ def read_history(path: Path, cutoff: dt.datetime) -> tuple[dict[int,int],dict[in
             raise ValueError(f"invalid back numbers in history row {draw}")
         for x in front: front_counts[x]+=1
         for x in back: back_counts[x]+=1
-    return front_counts, back_counts, len(rows), sha(raw)
+    latest_text = latest_publication.isoformat().replace("+00:00", "Z") if latest_publication else None
+    return front_counts, back_counts, len(rows), sha(raw), latest_text
 
 
 def pi_window_start(pi_digits: str, draw_id: str, zone: str) -> int:
@@ -196,7 +200,7 @@ def main():
     if not pi_digits.startswith(PI_PREFIX) or not pi_digits.isdigit():
         raise ValueError("pi digit file failed known-prefix or decimal-only validation")
     history_path=Path(args.history)
-    fc,bc,n_hist,hist_hash=read_history(history_path,cutoff)
+    fc,bc,n_hist,hist_hash,latest_pub=read_history(history_path,cutoff)
     root=secrets.token_bytes(32)
     tickets={
       "A":pi_tickets(pi_digits,args.draw_id,"identity"),
@@ -229,7 +233,7 @@ def main():
                     "C":"integer PPS without replacement; weight=count+1; front/back marginal counts separately",
                     "C_D_PRNG":"SHA-256 counter stream; randbelow by rejection; no floating point"},
       "pi_source_sha256":sha(pi_raw.rstrip(b"\n")),"historical_snapshot_sha256":hist_hash,
-      "historical_draw_count":n_hist,"history_latest_publication_utc":max((r["published_at_utc"] for r in csv.DictReader(history_path.open(encoding="utf-8-sig"))),default=None),
+      "historical_draw_count":n_hist,"history_latest_publication_utc":latest_pub,
       "root_seed_hex":root.hex(),"seed_derivation":"SHA256(root_seed_bytes || UTF8(experiment_id|draw_id|model_id))",
       "primary_endpoint":"per-draw mean front hits per ticket; paired model-vs-D",
       "secondary_endpoint":"per-draw mean back hits per ticket; paired model-vs-D",
