@@ -148,3 +148,11 @@ Confirmatory cohort remains **0/200**; no forecast has been committed for the co
 - Added a positive-semidefinite Cholesky factorization and Bartlett/Wishart multivariate-t simulation so the supplied 4×4 covariance matrix informs both numerator dependence and studentized variance. The simulation uses average per-draw covariance as a common covariance; draw-to-draw heteroskedasticity remains an approximation.
 - Added tests for Cholesky reconstruction, non-PSD rejection, and deterministic covariance-aware simulation. Local isolated tests passed; GitHub Actions results remain unverified.
 - No real 200-payload panel has been generated because a verified history snapshot for C is still missing. The committed JSON remains the historical reference-only baseline, not a covariance-calibrated power report. Power adequacy remains NOT CERTIFIED; cohort remains 0/200.
+
+
+## Addendum — independent draw-calendar attestation gate (2026-11-21)
+
+- `audit_history.py` now returns full `PASS` only when a separate calendar-attestation JSON is supplied. It requires `status=VERIFIED`, a source URL on the official `sporttery.cn` domain, a timezone-aware retrieval timestamp before the forecast cutoff, and an exact match of every `draw_id` / `draw_date` pair against the snapshot.
+- Without this attestation, a technically intact snapshot is only `PASS_WITH_WARNINGS`; the forecast generator and commit ledger reject it. Candidate issue gaps and duplicate draw dates are not guessed away; they must be reconciled against the official calendar.
+- Added tests for absent attestation, exact match, mismatched issue list and late calendar retrieval. The fetch-history integration fixture now supplies a synthetic official-calendar attestation for deterministic testing; this is test data only, not a real production calendar verification.
+- Activation now requires a real official calendar record, not merely a self-consistent API snapshot. This deliberately keeps the experiment inactive until independent continuity evidence exists.
