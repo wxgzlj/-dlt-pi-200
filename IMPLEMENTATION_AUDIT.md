@@ -176,3 +176,10 @@ Confirmatory cohort remains **0/200**; no forecast has been committed for the co
 
 - The auditor checks the attestation's official-domain HTTPS URL, timezone-aware retrieval time, preserved source-document bytes/hash, and exact issue/date-set equality between the supplied `draw_records` and CSV.
 - It does not parse the HTML/PDF to prove that the supplied `draw_records` were transcribed correctly from the source. The operator must manually inspect the preserved official calendar document. This is a human-verified provenance assertion, not an automated independent extraction or cryptographic proof.
+
+
+## Addendum — isolated local validation after provenance hardening (2026-11-21)
+
+- Local isolated harness results: 8/8 history-auditor tests, 9/9 covariance-aware power tests, and 7/7 exact portfolio-covariance tests passed. The separate six-case history-schema harness also passed earlier.
+- These are targeted local checks of the revised algorithms/fixtures, not a substitute for running the repository's full Python 3.11/3.12 GitHub Actions workflow. The latest repository CI result remains **NOT VERIFIED**.
+- The fetch-history mocked integration test and full generator→commit→reveal→verify round-trip still require repository CI and end-to-end execution.
