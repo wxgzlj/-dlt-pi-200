@@ -189,7 +189,7 @@ def main():
     ap=argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--draw-id",required=True)
     ap.add_argument("--cutoff-utc",required=True)
-    ap.add_argument("--pi-digits",default="data/pi_digits_1000000.txt")
+    ap.add_argument("--pi-digits",default="data/pi_digits_600000.txt")
     ap.add_argument("--history",required=True)
     ap.add_argument("--analysis-plan",default="PREREGISTRATION.md")
     ap.add_argument("--output",required=True)
