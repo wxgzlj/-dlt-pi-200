@@ -1,6 +1,6 @@
 # DLT-PI-200 — China Super Lotto π Randomness Prospective Experiment
 
-**Status: DESIGN PARAMETERS APPROVED — IMPLEMENTATION / ACTIVATION PENDING**
+**Status: DESIGN APPROVED — IMPLEMENTATION IN PROGRESS — NOT ACTIVE**
 
 This repository records a prospective, fixed-horizon paper experiment comparing four π-derived / historical-frequency procedures and one matched uniform-random control for China Super Lotto (大乐透). No real-money tickets are required or recommended.
 
@@ -53,4 +53,5 @@ Never rewrite or delete a committed forecast, reveal, or ledger entry. Correctio
 - Forecasts committed: **0**
 - Official results audited: **0**
 - Experiment active: **No**
-- Blockers: seed-commitment / no-reroll enforcement; complete power analysis and inference implementation; clean-environment CI verification; official history snapshot and completeness audit; exact runtime freeze; independent timestamp anchor; activation commitment.
+- Seed governance: one-time seed ceremony, persistent fail-closed lock, generator checks, and ledger-layer seed/anchor validation implemented; integration tests added. External anchor authenticity is still manually verified.
+- Remaining blockers: simulation-based power analysis and fixed-horizon inference; official history snapshot and continuity audit; full generator→commit→reveal→verify round-trip and tamper tests; latest CI result inspection; exact runtime freeze; independent activation timestamp.
