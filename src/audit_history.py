@@ -176,11 +176,12 @@ def audit_snapshot(snapshot_dir: Path, cutoff_utc: str | None = None,
             calendar_raw = calendar_attestation_path.read_bytes()
             calendar_hash = sha(calendar_raw)
             attestation = json.loads(calendar_raw.decode("utf-8"))
-            host = urlparse(str(attestation.get("source_url", ""))).hostname or ""
+            parsed_source = urlparse(str(attestation.get("source_url", "")))
+            host = parsed_source.hostname or ""
             if attestation.get("status") != "VERIFIED":
                 errors.append("calendar attestation status must be VERIFIED")
-            if not (host == "sporttery.cn" or host.endswith(".sporttery.cn")):
-                errors.append("calendar attestation source must be on the official sporttery.cn domain")
+            if parsed_source.scheme != "https" or not (host == "sporttery.cn" or host.endswith(".sporttery.cn")):
+                errors.append("calendar attestation source must use HTTPS on the official sporttery.cn domain")
             calendar_time = parse_utc(attestation.get("retrieved_at_utc", ""))
             if cutoff_utc and calendar_time >= parse_utc(cutoff_utc):
                 errors.append("official calendar attestation was retrieved at or after forecast cutoff")
@@ -205,8 +206,8 @@ def audit_snapshot(snapshot_dir: Path, cutoff_utc: str | None = None,
                 for item in calendar_rows:
                     issue = str(item.get("draw_id", "")).strip()
                     day = str(item.get("draw_date", "")).strip()
-                    if not issue or issue in calendar_seen:
-                        errors.append(f"empty or duplicate issue in calendar attestation: {issue}")
+                    if not issue or not issue.isdigit() or issue in calendar_seen:
+                        errors.append(f"empty, non-numeric or duplicate issue in calendar attestation: {issue}")
                     calendar_seen.add(issue)
                     dt.date.fromisoformat(day)
                     calendar_pairs.append((issue, day))
