@@ -8,6 +8,7 @@ import datetime as dt
 import hashlib
 import json
 from pathlib import Path
+from urllib.parse import urlparse
 
 API = "https://webapi.sporttery.cn/gateway/lottery/getHistoryPageListV1.qry"
 FIELDS = {"draw_id", "draw_date", "snapshot_retrieved_at_utc", "front", "back"}
@@ -55,7 +56,8 @@ def candidate_issue_gaps(draw_ids):
     return gaps
 
 
-def audit_snapshot(snapshot_dir: Path, cutoff_utc: str | None = None) -> dict:
+def audit_snapshot(snapshot_dir: Path, cutoff_utc: str | None = None,
+                   calendar_attestation_path: Path | None = None) -> dict:
     errors, warnings = [], []
     manifest_path = snapshot_dir / "manifest.json"
     csv_path = snapshot_dir / "history_snapshot.csv"
@@ -165,14 +167,51 @@ def audit_snapshot(snapshot_dir: Path, cutoff_utc: str | None = None) -> dict:
         errors.append("source bundle page hashes differ from manifest")
 
     gaps = candidate_issue_gaps(ids)
-    if gaps:
-        warnings.append("candidate issue-number gaps require official draw-calendar cross-check; not automatically classified as missing draws")
     duplicate_dates = sorted(d for d, count in Counter(dates).items() if count > 1)
-    if duplicate_dates:
+    calendar_verified = False
+    calendar_hash = None
+    if calendar_attestation_path is not None:
+        try:
+            calendar_raw = calendar_attestation_path.read_bytes()
+            calendar_hash = sha(calendar_raw)
+            attestation = json.loads(calendar_raw.decode("utf-8"))
+            host = urlparse(str(attestation.get("source_url", ""))).hostname or ""
+            if attestation.get("status") != "VERIFIED":
+                errors.append("calendar attestation status must be VERIFIED")
+            if not (host == "sporttery.cn" or host.endswith(".sporttery.cn")):
+                errors.append("calendar attestation source must be on the official sporttery.cn domain")
+            calendar_time = parse_utc(attestation.get("retrieved_at_utc", ""))
+            if cutoff_utc and calendar_time >= parse_utc(cutoff_utc):
+                errors.append("official calendar attestation was retrieved at or after forecast cutoff")
+            calendar_rows = attestation.get("draw_records")
+            if not isinstance(calendar_rows, list):
+                errors.append("calendar attestation must include draw_records")
+            else:
+                calendar_pairs = []
+                calendar_seen = set()
+                for item in calendar_rows:
+                    issue = str(item.get("draw_id", "")).strip()
+                    day = str(item.get("draw_date", "")).strip()
+                    if not issue or issue in calendar_seen:
+                        errors.append(f"empty or duplicate issue in calendar attestation: {issue}")
+                    calendar_seen.add(issue)
+                    dt.date.fromisoformat(day)
+                    calendar_pairs.append((issue, day))
+                if sorted(calendar_pairs) != sorted(zip(ids, dates)):
+                    errors.append("official calendar draw_records do not exactly match snapshot issue IDs and dates")
+                if not errors:
+                    calendar_verified = True
+        except Exception as exc:
+            errors.append(f"calendar attestation invalid: {exc}")
+    else:
+        warnings.append("official draw-calendar attestation missing; snapshot integrity alone does not certify historical completeness")
+    if gaps and not calendar_verified:
+        warnings.append("candidate issue-number gaps require official draw-calendar cross-check")
+    if duplicate_dates and not calendar_verified:
         warnings.append("multiple issues share draw dates; verify against official calendar")
 
     return {
-        "status": "FAIL" if errors else ("PASS_WITH_WARNINGS" if warnings else "PASS"),
+        "status": "FAIL" if errors else ("PASS" if calendar_verified else "PASS_WITH_WARNINGS"),
         "snapshot_dir": str(snapshot_dir),
         "draw_count": len(rows),
         "first_draw_id": ids[0] if ids else None,
@@ -182,9 +221,10 @@ def audit_snapshot(snapshot_dir: Path, cutoff_utc: str | None = None) -> dict:
         "raw_page_count": len(page_records),
         "candidate_issue_gaps": gaps,
         "duplicate_draw_dates": duplicate_dates,
+        "calendar_attestation_sha256": calendar_hash,
         "errors": errors,
         "warnings": warnings,
-        "continuity_status": "REQUIRES_OFFICIAL_DRAW_CALENDAR_CROSSCHECK",
+        "continuity_status": "VERIFIED_AGAINST_OFFICIAL_CALENDAR" if calendar_verified else "NOT_VERIFIED_OFFICIAL_CALENDAR_REQUIRED",
         "publication_time_status": "SNAPSHOT_COMPLETION_PROXY_NOT_ORIGINAL_PUBLICATION_TIME",
     }
 
@@ -193,9 +233,11 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--snapshot-dir", required=True)
     ap.add_argument("--cutoff-utc")
+    ap.add_argument("--calendar-attestation", help="JSON with official source_url, retrieved_at_utc, status=VERIFIED, and exact draw_records")
     ap.add_argument("--output", required=True)
     args = ap.parse_args()
-    result = audit_snapshot(Path(args.snapshot_dir), args.cutoff_utc)
+    calendar_path = Path(args.calendar_attestation) if args.calendar_attestation else None
+    result = audit_snapshot(Path(args.snapshot_dir), args.cutoff_utc, calendar_path)
     out = Path(args.output)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n", encoding="utf-8")
