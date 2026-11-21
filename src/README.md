@@ -14,9 +14,11 @@
 Suggested preparation:
 
 ```bash
-python src/fetch_history.py --output-dir data/history_snapshot
+SNAPSHOT_DIR="data/history_snapshot/$(date -u +%Y%m%dT%H%M%SZ)"
+python src/fetch_history.py --output-dir "$SNAPSHOT_DIR"
+python src/audit_history.py --snapshot-dir "$SNAPSHOT_DIR" --output "$SNAPSHOT_DIR/audit.json"
 python src/pi_digits.py --digits 600000 --output data/pi_digits_600000.txt
-# Follow SEED_CEREMONY.md before running the forecast generator.
+# Follow SEED_CEREMONY.md; point --history to "$SNAPSHOT_DIR/history_snapshot.csv".
 python -m unittest discover -s tests -v
 python src/prospective.py verify
 ```
