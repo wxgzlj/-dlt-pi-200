@@ -10,6 +10,17 @@ MODELS = ("A", "B1", "B2", "C", "D")
 CANDIDATES = ("A", "B1", "B2", "C")
 
 
+def sha(data: bytes) -> str:
+    return hashlib.sha256(data).hexdigest()
+
+
+def current_source_hash() -> str:
+    digest = hashlib.sha256()
+    for path in sorted(Path("src").glob("*.py")):
+        digest.update(path.name.encode("utf-8") + b"\\0" + path.read_bytes())
+    return digest.hexdigest()
+
+
 def validate_front_portfolio(tickets, expected_count=10, n_numbers=35, ticket_size=5):
     if not isinstance(tickets, list) or len(tickets) != expected_count:
         raise ValueError(f"portfolio must contain exactly {expected_count} tickets")
