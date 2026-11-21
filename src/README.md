@@ -11,7 +11,7 @@ Suggested preparation:
 
 ```bash
 python src/fetch_history.py --output-dir data/history_snapshot
-python src/pi_digits.py --digits 1000000 --output data/pi_digits_1000000.txt
+python src/pi_digits.py --digits 600000 --output data/pi_digits_600000.txt
 python -m unittest discover -s tests -v
 python src/prospective.py verify
 ```
@@ -20,4 +20,4 @@ The history downloader records the retrieval timestamp as `published_at_utc` for
 
 The forecast generator intentionally fails closed on invalid history, post-cutoff history rows, invalid ticket structure, insufficient π digits, or duplicate portfolios. It does not publish commitments by itself. Run `python src/prospective.py commit <payload.json>` to append a COMMIT event, then publish `ledger/events.jsonl` before the cutoff. After the result, run `python src/prospective.py reveal <experiment_id> <draw_id> <result.json>`. The private vault must never be committed.
 
-Before use, preserve the API raw pages, manifest, CSV, π source file, exact Python runtime version, and source-code hashes. Do not assume pagination completion alone proves historical completeness; audit issue continuity and source revisions.
+The approved experiment parameter is 600,000 decimal digits, not 1,000,000. Before use, preserve the API raw pages, manifest, CSV, π source file, exact Python runtime version, and source-code hashes. Seed anti-reroll and power/inference implementation are still activation blockers. Do not assume pagination completion alone proves historical completeness; audit issue continuity and source revisions.
