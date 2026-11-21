@@ -34,7 +34,7 @@ User approval recorded: 2026-11-21 (Asia/Shanghai). This approves the proposed e
 - Sequential probability-proportional-to-size sampling without replacement; select with integer cumulative weights and rejection-based randbelow. No floating-point weighting.
 - No recency weighting, parameter tuning, or test-set feedback.
 - Include the exact CSV SHA-256, snapshot-completion time, row count, and timestamp policy in every forecast payload.
-- The snapshot completion time is a conservative availability proxy; all pages must be retrieved before cutoff, and the timestamp cannot be backdated. A separate official draw-calendar attestation must exactly reconcile the snapshot's issue IDs and dates before the audit can return PASS. Completeness and issue continuity must be audited separately.
+- The snapshot completion time is a conservative availability proxy; all pages must be retrieved before cutoff, and the timestamp cannot be backdated. A separate official draw-calendar attestation must preserve the raw official calendar document and its SHA-256, and exactly reconcile the snapshot's issue IDs and dates before the audit can return PASS. Completeness and issue continuity must be audited separately.
 
 ## 4. C/D deterministic random stream and seed governance
 
