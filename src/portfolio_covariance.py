@@ -127,6 +127,8 @@ def analyze_payload(payload):
     audit=payload.get("history_audit")
     if not isinstance(audit,dict) or audit.get("status")!="PASS" or audit.get("errors") or audit.get("warnings"):
         raise ValueError("payload history audit must be PASS with no errors or warnings")
+    if audit.get("continuity_status")!="VERIFIED_AGAINST_OFFICIAL_CALENDAR" or not audit.get("calendar_attestation_sha256"):
+        raise ValueError("payload history audit lacks verified official calendar continuity")
     audit_bytes=json.dumps(audit,ensure_ascii=False,sort_keys=True,separators=(",",":"),allow_nan=False).encode("utf-8")
     if hashlib.sha256(audit_bytes).hexdigest()!=payload.get("history_audit_sha256"):
         raise ValueError("payload history audit hash mismatch")
