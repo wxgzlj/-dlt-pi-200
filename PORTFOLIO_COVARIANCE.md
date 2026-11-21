@@ -48,6 +48,14 @@ python src/portfolio_covariance.py --panel-jsonl data/simulation_portfolio_panel
 
 The panel output includes the average per-draw paired-difference covariance and the covariance of the 200-draw mean. It also retains draw-level exposure and covariance diagnostics.
 
+Feed the panel output into the covariance-aware power engine:
+
+```bash
+python src/power_analysis.py --portfolio-covariance results/portfolio_covariance.json --target-model A --simulations 100000 --output results/power_A.json
+```
+
+Repeat with `--target-model B1`, `B2`, and `C`. The engine uses the supplied average covariance in a multivariate-t/Wishart approximation; it does not yet model draw-to-draw covariance heterogeneity exactly.
+
 ## Verification and limitations
 
 - The covariance formula is tested against exhaustive enumeration on a smaller finite population.
