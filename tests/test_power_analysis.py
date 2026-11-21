@@ -6,6 +6,7 @@ from src.power_analysis import (
     paired_difference_sd,
     regularized_beta,
     simulate_scenario,
+    mc_interval,
     student_t_two_sided_p,
     ticket_front_hit_variance,
 )
@@ -23,6 +24,11 @@ class TestPowerAnalysis(unittest.TestCase):
     def test_holm_step_down(self):
         self.assertEqual(holm_rejections([0.001, 0.01, 0.03, 0.8]), {0, 1})
         self.assertEqual(holm_rejections([0.02, 0.03, 0.04, 0.9]), set())
+
+    def test_wilson_interval_handles_all_successes(self):
+        low, high = mc_interval(1.0, 100000)
+        self.assertLess(low, 1.0)
+        self.assertEqual(high, 1.0)
 
     def test_simulation_is_reproducible(self):
         a = simulate_scenario(500, 0.10, 1.0, 123456)
