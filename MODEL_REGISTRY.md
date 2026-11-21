@@ -1,50 +1,48 @@
 # Model Registry — DLT-PI-200
 
-**Status: MODEL FAMILIES REGISTERED; EXACT PARAMETERS NOT YET FROZEN.**
+**Status: MODEL FAMILIES REGISTERED; PROPOSED PARAMETERS AWAITING USER APPROVAL.**
 
-All models produce exactly 10 distinct tickets per eligible draw. A ticket is 5 distinct front numbers (01–35) plus 2 distinct back numbers (01–12), subject to official rules verification.
+Each model produces exactly 10 distinct tickets per eligible draw. Ticket format: 5 distinct front numbers (01–35) and 2 distinct back numbers (01–12).
 
 ## A — π direct mapping
-
-- Transform: identity decimal digit blocks.
-- Mapping: rejection sampling, not naive modulo.
-- For modulus q and m-digit integer z, N=10^m and L=floor(N/q)×q. Reject z≥L; otherwise map to 1+(z mod q).
-- Repeated numbers are rejected and the stream advances; record every consumed digit offset, rejection and duplicate.
-- Front/back streams must use disjoint, frozen π digit intervals.
-- Exact π source representation, digit indexing convention, block length, starting offsets, and ticket-stream allocation: **MISSING; must freeze before activation**.
+- Source: decimal expansion of π generated deterministically by the Chudnovsky binary-splitting algorithm in `src/pi_digits.py`.
+- Mapping block length: 6 decimal digits.
+- Transform: identity.
+- Rejection sampling: for q∈{35,12}, N=10^6, L=floor(N/q)×q; reject z≥L; otherwise map to 1+(z mod q).
+- Duplicate mapped numbers are skipped and the stream advances.
+- Per-ticket windows and front/back offsets: see PARAMETER_DECISIONS.md.
 
 ## B1 — π fixed-block reversal
-
-- Reverse the digits within each fixed-length block, then apply A's rejection-sampling map.
-- Block length, π source intervals, offsets and ticket allocation: **MISSING; must freeze before activation**.
-- Register as a separate model; do not tune on test outcomes.
+- Same π digit source, 6-digit blocks, rejection sampling and per-ticket windows as A.
+- Transform each block by reversing its six digits before mapping.
+- No parameter tuning during the cohort.
 
 ## B2 — π digit 9-complement
+- Same π digit source, 6-digit blocks, rejection sampling and per-ticket windows as A.
+- Transform each digit d to 9−d before mapping.
+- No parameter tuning during the cohort.
 
-- Replace each decimal digit d with 9−d, then apply A's rejection-sampling map.
-- π source intervals, offsets, block length and ticket allocation: **MISSING; must freeze before activation**.
-- Register as a separate model; do not tune on test outcomes.
+## C — historical-frequency weighted sampler
+- Input: official draw-history CSV snapshot, only records published before the forecast cutoff.
+- For each number i, integer weight w_i = c_i + 1, where c_i is the number of prior appearances in that zone.
+- Sequential probability-proportional-to-size sampling without replacement, separately for front (5 of 35) and back (2 of 12).
+- Integer weighted selection uses rejection-based randbelow; no floating-point cumulative-weight sampling.
+- This is a heuristic marginal-frequency model, not a joint probability model; exploratory only.
+- Data snapshot hash, source and latest included publication timestamp are stored in every forecast payload.
 
-## C — Historical-frequency weighted sampler (exploratory)
+## D — uniform-random control
+- Uniform sample without replacement for each zone.
+- PRNG: Python `random.Random` with `getrandbits`; implement explicit rejection-based randbelow and partial Fisher–Yates so behavior does not depend on `random.sample`.
+- Per-draw root seed: 32 bytes from OS CSPRNG, generated once before commitment.
+- Per-model sub-seeds: SHA-256 of root_seed || experiment_id || draw_id || model_id; separate independent streams for C and D.
+- The root seed and derivation metadata are included in the committed payload. No reroll or seed shopping.
 
-- Uses only official draws whose publication timestamps precede the forecast cutoff.
-- A candidate smoothed marginal weight is p_i=(c_i+a)/(T+a+b), with declared smoothing parameters a,b.
-- Sampling without replacement requires a fully specified algorithm; marginal weights alone do not define a joint distribution.
-- Exact features, smoothing parameters, sampling algorithm, historical data source, cutoff policy and snapshot hash: **MISSING; must freeze before activation**.
-- C is exploratory in rationale but remains one of the registered prospective comparisons; do not retune during the cohort.
-
-## D — Uniform-random control
-
-- Uniformly sample 5 distinct front numbers from 01–35 and 2 distinct back numbers from 01–12.
-- Record PRNG name/version, language/runtime, seed, substream, and code hash.
-- Seed is committed before the draw and never regenerated due to unfavorable output.
-- Exact PRNG, seed derivation, substream separation and implementation: **MISSING; must freeze before activation**.
+## π stream allocation proposal
+See PARAMETER_DECISIONS.md. Each ticket receives a fixed, disjoint 2,048-digit window; front and back zones occupy non-overlapping blocks. If a window is exhausted, generation fails closed; it must not silently jump to a new window.
 
 ## Common constraints
-
 - Exactly 10 tickets per model per draw.
-- No duplicates within each model's 10 tickets.
-- No replacement or regeneration after seeing any draw result.
-- All models receive equal ticket budgets.
-- All source data and code versions are hashed and preserved.
+- No duplicate tickets within a model.
+- No replacement after observing a result.
+- Equal ticket budgets across all models.
 - Any change creates a new experiment ID/cohort; it cannot overwrite DLT-PI-200.
