@@ -170,6 +170,7 @@ def audit_snapshot(snapshot_dir: Path, cutoff_utc: str | None = None,
     duplicate_dates = sorted(d for d, count in Counter(dates).items() if count > 1)
     calendar_verified = False
     calendar_hash = None
+    calendar_source_hash = None
     if calendar_attestation_path is not None:
         try:
             calendar_raw = calendar_attestation_path.read_bytes()
@@ -183,6 +184,18 @@ def audit_snapshot(snapshot_dir: Path, cutoff_utc: str | None = None,
             calendar_time = parse_utc(attestation.get("retrieved_at_utc", ""))
             if cutoff_utc and calendar_time >= parse_utc(cutoff_utc):
                 errors.append("official calendar attestation was retrieved at or after forecast cutoff")
+            source_file = attestation.get("source_document_file")
+            if not isinstance(source_file, str) or not source_file:
+                errors.append("calendar attestation must reference a preserved raw source document")
+            else:
+                source_path = (snapshot_dir / source_file).resolve()
+                if snapshot_dir.resolve() not in source_path.parents:
+                    errors.append("calendar source document must be inside the snapshot directory")
+                else:
+                    source_raw = source_path.read_bytes()
+                    calendar_source_hash = sha(source_raw)
+                    if calendar_source_hash != attestation.get("source_document_sha256"):
+                        errors.append("official calendar source document SHA-256 mismatch")
             calendar_rows = attestation.get("draw_records")
             if not isinstance(calendar_rows, list):
                 errors.append("calendar attestation must include draw_records")
@@ -222,6 +235,7 @@ def audit_snapshot(snapshot_dir: Path, cutoff_utc: str | None = None,
         "candidate_issue_gaps": gaps,
         "duplicate_draw_dates": duplicate_dates,
         "calendar_attestation_sha256": calendar_hash,
+        "calendar_source_document_sha256": calendar_source_hash,
         "errors": errors,
         "warnings": warnings,
         "continuity_status": "VERIFIED_AGAINST_OFFICIAL_CALENDAR" if calendar_verified else "NOT_VERIFIED_OFFICIAL_CALENDAR_REQUIRED",
