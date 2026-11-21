@@ -48,7 +48,25 @@ def main():
     seed_path = PRIVATE / f"{args.draw_id}.seed"
     public_path = PUBLIC / f"{args.draw_id}.json"
 
-    # Both files use exclusive creation: a second ceremony for this draw fails.
+    # Persistent lock is created before entropy is requested. It remains even
+    # after a crash: a partial ceremony is a protocol deviation, never a reroll.
+    lock_path = PRIVATE / f"{args.draw_id}.ceremony.lock"
+    if seed_path.exists() or public_path.exists() or lock_path.exists():
+        raise SystemExit("SEED_CEREMONY_ALREADY_EXISTS: do not create or select a replacement seed")
+    lock_record = {"experiment_id":"DLT-PI-200","draw_id":args.draw_id,
+                   "lock_created_at_utc":utc_now(),"scheduled_cutoff_utc":args.cutoff_utc,
+                   "policy":"ONE_ATTEMPT_FAIL_CLOSED"}
+    try:
+        fd = os.open(lock_path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+        with os.fdopen(fd, "wb") as f:
+            f.write(canonical(lock_record) + b"\\n"); f.flush(); os.fsync(f.fileno())
+    except FileExistsError:
+        raise SystemExit("SEED_CEREMONY_ALREADY_EXISTS: do not create or select a replacement seed")
+    try:
+        os.chmod(PRIVATE, 0o700)
+    except OSError:
+        pass
+    # Do not remove the lock if either write fails. Never reroll after failure.
     seed = secrets.token_bytes(32)
     seed_hex = seed.hex()
     commitment = hashlib.sha256(seed).hexdigest()
@@ -81,6 +99,7 @@ def main():
         "seed_commitment_sha256": commitment,
         "public_commitment_file": str(public_path.relative_to(ROOT)),
         "private_seed_file": str(seed_path.relative_to(ROOT)),
+        "lock_file": str(lock_path.relative_to(ROOT)),
         "next_step": "Publish the public commitment file to the public repository and obtain an independent timestamp BEFORE running generate_forecast.py. Never publish the private seed."
     }, ensure_ascii=False, indent=2))
 
