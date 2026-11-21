@@ -46,7 +46,10 @@ def normalize(item:dict,snapshot_time:str)->dict:
         raise ValueError(f"invalid front zone in official issue {issue}")
     if len(set(back))!=2 or any(x<1 or x>12 for x in back):
         raise ValueError(f"invalid back zone in official issue {issue}")
-    return {"draw_id":issue,"draw_date":date,"published_at_utc":snapshot_time,
+    if not issue.isdigit():
+        raise ValueError(f"non-numeric official issue ID: {issue}")
+    dt.date.fromisoformat(date)
+    return {"draw_id":issue,"draw_date":date,"snapshot_retrieved_at_utc":snapshot_time,
             "front":" ".join(f"{x:02d}" for x in front),
             "back":" ".join(f"{x:02d}" for x in back)}
 
@@ -60,39 +63,60 @@ def main():
     args=ap.parse_args()
     if not 1<=args.page_size<=5000 or args.delay<0:
         raise ValueError("invalid page size or delay")
-    out=Path(args.output_dir); rawdir=out/"raw"; rawdir.mkdir(parents=True,exist_ok=True)
-    snapshot_time=dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds").replace("+00:00","Z")
-    rows=[]; seen=set(); page_hashes=[]; page=1
+    out=Path(args.output_dir); rawdir=out/"raw"
+    if (out/"manifest.json").exists() or (out/"history_snapshot.csv").exists() or list(rawdir.glob("page_*.json")) if rawdir.exists() else False:
+        raise FileExistsError("snapshot output already exists; choose a new timestamped --output-dir, never overwrite a prior snapshot")
+    rawdir.mkdir(parents=True,exist_ok=True)
+    retrieval_started=dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds").replace("+00:00","Z")
+    items=[]; seen=set(); page_hashes=[]; page=1; first_page_signature=None
     while True:
         obj,raw,url=fetch_page(page,args.page_size,args.timeout)
         (rawdir/f"page_{page:04d}.json").write_bytes(raw)
         page_hashes.append({"page":page,"url":url,"sha256":sha(raw),"bytes":len(raw)})
         records=obj.get("value",{}).get("list",[])
+        if page==1:
+            signature_rows=[{"issue":str(x.get("lotteryDrawNum","")),"date":str(x.get("lotteryDrawTime","")),"result":str(x.get("lotteryDrawResult",""))} for x in records]
+            first_page_signature=sha(json.dumps(signature_rows,sort_keys=True,separators=(",",":")).encode())
         if not records:
             break
         for item in records:
-            row=normalize(item,snapshot_time)
-            if row["draw_id"] in seen:
-                raise RuntimeError(f"duplicate issue across API pages: {row['draw_id']}")
-            seen.add(row["draw_id"]); rows.append(row)
+            issue=str(item.get("lotteryDrawNum","")).strip()
+            if not issue or issue in seen:
+                raise RuntimeError(f"duplicate or empty issue across API pages: {issue}")
+            seen.add(issue); items.append(item)
         if len(records)<args.page_size:
             break
         page+=1
         time.sleep(args.delay)
-    if not rows:
+    if not items:
         raise RuntimeError("official API returned no draw records")
-    rows.sort(key=lambda r:r["draw_id"])
+    # Recheck page 1 after pagination: a new draw inserted during page-number
+    # pagination can shift later pages and silently omit/duplicate records.
+    verify_obj,verify_raw,verify_url=fetch_page(1,args.page_size,args.timeout)
+    verify_records=verify_obj.get("value",{}).get("list",[])
+    verify_signature_rows=[{"issue":str(x.get("lotteryDrawNum","")),"date":str(x.get("lotteryDrawTime","")),"result":str(x.get("lotteryDrawResult",""))} for x in verify_records]
+    verify_signature=sha(json.dumps(verify_signature_rows,sort_keys=True,separators=(",",":")).encode())
+    if verify_signature!=first_page_signature:
+        raise RuntimeError("page 1 changed during pagination; discard this partial snapshot and retry into a new directory")
+    snapshot_time=dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds").replace("+00:00","Z")
+    rows=[normalize(item,snapshot_time) for item in items]
+    rows.sort(key=lambda r:(r["draw_date"],int(r["draw_id"])))
     csv_path=out/"history_snapshot.csv"
     with csv_path.open("w",encoding="utf-8",newline="") as f:
-        w=csv.DictWriter(f,fieldnames=["draw_id","draw_date","published_at_utc","front","back"])
+        w=csv.DictWriter(f,fieldnames=["draw_id","draw_date","snapshot_retrieved_at_utc","front","back"])
         w.writeheader(); w.writerows(rows)
-    raw_bundle=json.dumps({"source":"official_sporttery_api","snapshot_time_utc":snapshot_time,
-                           "page_hashes":page_hashes},ensure_ascii=False,sort_keys=True,indent=2).encode()
+    bundle={"source":"official_sporttery_api","retrieval_started_at_utc":retrieval_started,
+            "snapshot_completed_at_utc":snapshot_time,"page_hashes":page_hashes,
+            "page_1_stability_check":{"re_fetched":True,"signature_matches":True,"verification_url":verify_url}}
+    (out/"source_bundle.json").write_text(json.dumps(bundle,ensure_ascii=False,sort_keys=True,indent=2)+"\\n",encoding="utf-8")
     manifest={"source":"official_sporttery_api","endpoint":API,"gameNo":"85",
+              "retrieval_started_at_utc":retrieval_started,"snapshot_completed_at_utc":snapshot_time,
               "snapshot_time_utc":snapshot_time,"draw_count":len(rows),
               "first_draw_id":rows[0]["draw_id"],"last_draw_id":rows[-1]["draw_id"],
+              "first_draw_date":rows[0]["draw_date"],"last_draw_date":rows[-1]["draw_date"],
               "csv_sha256":sha(csv_path.read_bytes()),"pages":page_hashes,
-              "publication_time_policy":"snapshot retrieval time assigned to every row; conservative and never backdated"}
+              "page_1_stability_check":{"re_fetched":True,"signature_matches":True},
+              "timestamp_policy":"snapshot completion time assigned to every row; this is a conservative availability proxy, not the original publication time"}
     (out/"manifest.json").write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
     print(json.dumps(manifest,ensure_ascii=False,indent=2))
 
