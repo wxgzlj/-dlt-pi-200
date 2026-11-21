@@ -72,3 +72,12 @@ CI runs #25 and #26 completed successfully on the generator/seed-ceremony commit
 - CI workflow uses unittest discovery, so the new integration test module is included automatically. The new commits' CI result must be inspected before marking the integration suite PASS.
 - Residual trust boundary remains: the generator checks anchor-attestation fields but does not independently verify GitHub's commit object or a trusted timestamp receipt. The seed ceremony is stronger against accidental/ordinary rerolls, not trustless against a malicious operator.
 - Confirmatory cohort remains **0/200**. No forecast has been committed or independently anchored for the confirmatory cohort.
+
+
+## Addendum — seed provenance enforced by the ledger (2026-11-21)
+
+- Commit `2f99df63130eca6c2618671bf97417f631d9a351` adds a dedicated seed-provenance validator at the commit boundary; commit `e61d726f293ea091c4c9b3e23d2d46d849a6f103` removes duplicated legacy checks after consolidation.
+- The ledger now rejects payloads missing the 32-byte root seed, commitment hash, seed-anchor attestation or timezone-aware creation time. It verifies SHA-256(root seed), anchor hash binding, a full 40-character Git commit SHA, and the ordering: anchor timestamp < forecast creation timestamp < draw cutoff.
+- Commit `4f359da1b03db3110f39ef9425033034f213c90a` adds unit tests for valid provenance, seed-hash mismatch, late anchor, naive timestamp and abbreviated commit SHA.
+- Important boundary: these checks establish internal consistency and chronology in supplied fields; they do **not** fetch GitHub's commit object or prove the timestamp independently. Human/external anchor verification remains mandatory.
+- CI result for these latest commits has not yet been independently confirmed. Do not label the new tests as passing until the corresponding GitHub Actions run is inspected.
