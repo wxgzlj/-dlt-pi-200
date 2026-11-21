@@ -2,6 +2,7 @@
 """Exact front-zone score covariance from fixed lottery ticket portfolios."""
 from __future__ import annotations
 import argparse
+import hashlib
 import json
 from pathlib import Path
 
@@ -106,12 +107,24 @@ def analyze_payload(payload):
         raise ValueError("payload model registry or ticket budget does not match the frozen design")
     provenance_fields=("code_sha256","analysis_plan_sha256","pi_source_sha256",
                        "historical_snapshot_sha256","history_audit_sha256",
-                       "history_snapshot_completed_at_utc","game_rules_id")
+                       "history_snapshot_completed_at_utc","historical_draw_count","game_rules_id")
     missing=[key for key in provenance_fields if not payload.get(key)]
     if missing:
         raise ValueError("payload missing frozen provenance fields: "+", ".join(missing))
     if not isinstance(payload.get("parameters"),dict):
         raise ValueError("payload is missing frozen model parameters")
+    audit=payload.get("history_audit")
+    if not isinstance(audit,dict) or audit.get("status")!="PASS" or audit.get("errors") or audit.get("warnings"):
+        raise ValueError("payload history audit must be PASS with no errors or warnings")
+    audit_bytes=json.dumps(audit,ensure_ascii=False,sort_keys=True,separators=(",",":"),allow_nan=False).encode("utf-8")
+    if hashlib.sha256(audit_bytes).hexdigest()!=payload.get("history_audit_sha256"):
+        raise ValueError("payload history audit hash mismatch")
+    if audit.get("csv_sha256_computed")!=payload.get("historical_snapshot_sha256"):
+        raise ValueError("history audit CSV hash does not match payload snapshot")
+    if audit.get("draw_count")!=payload.get("historical_draw_count"):
+        raise ValueError("history audit row count does not match payload")
+    if audit.get("snapshot_completed_at_utc")!=payload.get("history_snapshot_completed_at_utc"):
+        raise ValueError("history audit timestamp does not match payload snapshot")
     tickets = payload.get("tickets")
     if not isinstance(tickets, dict) or set(tickets) != set(MODELS):
         raise ValueError("payload must contain exactly A,B1,B2,C,D")
@@ -149,7 +162,7 @@ def analyze_panel(payloads):
         raise ValueError("portfolio panel contains duplicate draw_id values")
     provenance_fields=("code_sha256","analysis_plan_sha256","pi_source_sha256",
                        "historical_snapshot_sha256","history_audit_sha256",
-                       "history_snapshot_completed_at_utc","game_rules_id")
+                       "history_snapshot_completed_at_utc","historical_draw_count","game_rules_id")
     baseline={key:payloads[0].get(key) for key in provenance_fields}
     baseline_parameters=json.dumps(payloads[0].get("parameters"),sort_keys=True,separators=(",",":"))
     for payload in payloads[1:]:
@@ -171,7 +184,7 @@ def analyze_panel(payloads):
         "independent_unit": "draw",
         "paired_difference_models": names,
         "frozen_provenance": baseline,
-        "parameters_sha256": __import__("hashlib").sha256(baseline_parameters.encode()).hexdigest(),
+        "parameters_sha256": hashlib.sha256(baseline_parameters.encode()).hexdigest(),
         "average_per_draw_paired_difference_covariance": avg_cov,
         "covariance_of_200_draw_mean": cov_of_mean,
         "draw_level_diagnostics": draw_reports,
