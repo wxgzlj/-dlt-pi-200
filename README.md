@@ -41,7 +41,7 @@ The first confirmatory draw is the first eligible draw after the completed activ
 - `src/`: official history snapshot downloader/auditor, reproducible π generation, ticket generator, seed ceremony, power simulation and exact portfolio covariance diagnostics
 - `POWER_ANALYSIS_PLAN.md` / `results/power_analysis_preliminary.json`: parametric power-planning assumptions and reproducible Monte Carlo output
 - `PORTFOLIO_COVARIANCE.md`: exact covariance of fixed ticket portfolios under a uniform draw
-- `src/audit_history.py`: read-only raw-page/CSV hash and snapshot-cutoff audit
+- `src/audit_history.py`: raw-page/CSV integrity audit plus mandatory official draw-calendar attestation bound to a preserved raw source document/hash
 - `tests/` and `.github/workflows/`: unit tests and CI workflows
 - `ledger/`: per-draw commitments and post-draw reveals
 - `data/`: verified rules and source metadata; do not store secrets here
@@ -58,5 +58,6 @@ Never rewrite or delete a committed forecast, reveal, or ledger entry. Correctio
 - Experiment active: **No**
 - Seed governance: one-time seed ceremony, persistent fail-closed lock, generator checks, and ledger-layer seed/anchor validation implemented; integration tests added. External anchor authenticity is still manually verified.
 - Power analysis: preliminary 100,000-replicate-per-scenario parametric report published; +0.10 MDE power is 96.213% under the idealized reference variance, but 63.642% under 1.5× noise. This does not certify adequate power.
-- Portfolio covariance: exact exposure/covariance calculator implemented and tested; no verified 200-payload portfolio panel yet, and the power engine is not yet wired to consume it.
-- Remaining blockers: obtain and audit a fresh official history snapshot; cross-check candidate issue gaps against the official draw calendar; generate a 200-payload portfolio panel including C from that verified snapshot, compute exact covariance, and run model-specific covariance-aware power simulations; freeze final inferential test; full generator→commit→reveal→verify round-trip and tamper tests; latest CI result inspection; exact runtime freeze; independent activation timestamp.
+- History audit gate: a full PASS requires the preserved raw official calendar document, its SHA-256, and an exact issue-ID/date match. The generator and commit ledger reject snapshots without this attestation.
+- Portfolio covariance: exact exposure/covariance calculator and covariance-aware multivariate power mode are implemented; no real 200-payload portfolio panel has yet been generated, so model-specific power is not certified.
+- Remaining blockers: obtain a fresh official history snapshot and independent official calendar evidence; publish/preserve the snapshot and evidence bundle for external review; generate the 200-payload panel including C; run model-specific covariance-aware power simulations; freeze the final inferential test; complete generator→commit→reveal→verify round-trip and tamper tests; inspect latest CI; freeze runtime; independently timestamp activation.
