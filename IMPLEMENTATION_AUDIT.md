@@ -81,3 +81,15 @@ CI runs #25 and #26 completed successfully on the generator/seed-ceremony commit
 - Commit `4f359da1b03db3110f39ef9425033034f213c90a` adds unit tests for valid provenance, seed-hash mismatch, late anchor, naive timestamp and abbreviated commit SHA.
 - Important boundary: these checks establish internal consistency and chronology in supplied fields; they do **not** fetch GitHub's commit object or prove the timestamp independently. Human/external anchor verification remains mandatory.
 - CI result for these latest commits has not yet been independently confirmed. Do not label the new tests as passing until the corresponding GitHub Actions run is inspected.
+
+## Addendum — ledger-boundary enforcement and power-analysis specification (2026-11-21)
+
+- Commit `32936e018d55f6b52e4486d2660aaf2f95588cae` adds defense-in-depth validation in `prospective.py`: the commit layer now independently checks the 32-byte root seed, SHA-256 commitment, matching seed-anchor hash, required anchor URL/full commit SHA, timezone-aware pre-cutoff anchor time, and forecast creation time after the anchor and before cutoff. A hand-built payload can no longer bypass the generator's seed-governance checks.
+- Commits `7f2136c8a16d5df569bd42a21a48bbf960fd8e9c` and `83b1264b33a370938ae24ece1a4a86d62b82cd32` add focused commit-layer tests for valid anchored commit, missing anchor, seed-hash mismatch, and late anchor. The tests use temporary paths and do not touch the live ledger.
+- Commit `98697ea73d758cf5042f0471f97c098ff739f63e` adds rollback of partial seed/public-file writes while preserving the persistent one-attempt lock. A crash or failed ceremony remains a protocol deviation; it must not trigger a replacement seed.
+- Commit `8e13d226dced5e02668b9e9ae2d3bb294a3263da` adds `POWER_ANALYSIS_SPEC.md`, a proposed draw-cluster Monte Carlo specification. It defines a single-focal exponential-tilt alternative calibrated to +0.10 front hits/ticket, Holm-adjusted paired tests, null calibration, and Monte Carlo error. This is a specification only: no simulation has run, no power estimate exists, and the proposed inferential details are not yet frozen.
+- Documentation now marks seed governance as implemented with manual external-anchor verification; the experiment remains inactive.
+- CI result for the newest commits has not yet been independently inspected. Do not mark the new test suite PASS until both Python matrix jobs are confirmed successful.
+- Remaining critical blockers: execute and audit the 100,000+ simulation power study; retrieve and continuity-audit official history; run complete generator/commit/reveal/verify and tamper integration tests; independently verify timestamp anchors; freeze runtime; and publish a separately anchored activation record.
+
+Confirmatory cohort remains **0/200**; no forecast has been committed for the confirmatory cohort.
