@@ -123,3 +123,11 @@ Confirmatory cohort remains **0/200**; no forecast has been committed for the co
 - `src/generate_forecast.py` now requires the explicit `snapshot_retrieved_at_utc` field, requires all rows to share one completion timestamp, checks that timestamp strictly precedes cutoff, and enforces chronological date ordering. Forecast payload labels this as a snapshot-completion availability proxy, not an original publication timestamp.
 - A new `tests/test_history_snapshot.py` covers cutoff enforcement, mixed snapshot rejection, old ambiguous column rejection, chronology, and official API normalization. CI result remains to be inspected.
 - Limitation: page-1 recheck detects a shifting head but does not prove that older pages were not corrected during the fetch. Raw pages and hashes are preserved for audit; full page-by-page historical revision reconciliation remains open.
+
+
+## Addendum — raw history snapshot auditor (2026-11-21)
+
+- Added `src/audit_history.py` and `tests/test_audit_history.py`. The auditor is read-only and verifies the official endpoint/game identifier, manifest and source-bundle consistency, CSV SHA-256, raw-page SHA-256/byte counts, API page error codes, issue-ID reconciliation between raw pages and normalized CSV, row counts, chronological order, shared snapshot-completion time, and optional forecast-cutoff eligibility.
+- Candidate numeric issue gaps and duplicate draw dates are reported as warnings requiring the official draw calendar; they are not silently classified as missing draws.
+- Four local synthetic-fixture audit tests passed on CPython 3.13.5, including detection of CSV tampering, raw-page tampering and post-cutoff snapshots. The six history-schema tests also passed locally. GitHub Actions results remain unverified.
+- The auditor does not fetch or independently certify the official draw calendar, and a single snapshot cannot reveal all historical corrections. Cross-snapshot comparison remains open.
