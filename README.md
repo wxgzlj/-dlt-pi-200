@@ -1,6 +1,6 @@
 # DLT-PI-200 — China Super Lotto π Randomness Prospective Experiment
 
-**Status: PREREGISTRATION DRAFT — NOT YET ACTIVE**
+**Status: DESIGN PARAMETERS APPROVED — IMPLEMENTATION / ACTIVATION PENDING**
 
 This repository records a prospective, fixed-horizon paper experiment comparing four π-derived / historical-frequency procedures and one matched uniform-random control for China Super Lotto (大乐透). No real-money tickets are required or recommended.
 
@@ -53,4 +53,4 @@ Never rewrite or delete a committed forecast, reveal, or ledger entry. Correctio
 - Forecasts committed: **0**
 - Official results audited: **0**
 - Experiment active: **No**
-- Blockers: user approval of proposed parameters; clean-environment CI execution; official historical snapshot and completeness audit; power analysis; independent timestamp anchor; activation commitment.
+- Blockers: seed-commitment / no-reroll enforcement; complete power analysis and inference implementation; clean-environment CI verification; official history snapshot and completeness audit; exact runtime freeze; independent timestamp anchor; activation commitment.
