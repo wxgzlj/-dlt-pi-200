@@ -282,6 +282,8 @@ def main():
     out=report(a.simulations,a.seed,covariance,a.target_model,covariance_source)
     out["provenance"]={
         "source_code_sha256":hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+        "source_tree_sha256":current_source_hash(),
+        "analysis_plan_sha256":hashlib.sha256(Path("PREREGISTRATION.md").read_bytes()).hexdigest(),
         "power_plan_sha256":hashlib.sha256(Path(a.power_plan).read_bytes()).hexdigest(),
         "preregistration_commit":a.preregistration_commit,
         "portfolio_covariance_sha256":covariance_source if a.portfolio_covariance else None}
