@@ -6,6 +6,7 @@ leading '3'. The requested digit count is explicit and recorded by the caller.
 """
 from __future__ import annotations
 import argparse
+import sys
 from math import isqrt
 from pathlib import Path
 
@@ -39,6 +40,10 @@ def pi_fraction_digits(count: int) -> str:
     scale = 10**precision
     sqrt_scaled = isqrt(10005 * scale * scale)
     scaled_pi = (426880 * sqrt_scaled * q) // t
+    # Python 3.11+ limits int-to-decimal conversion by default; this is a
+    # deliberate, bounded conversion of our own computed integer.
+    if hasattr(sys, "set_int_max_str_digits"):
+        sys.set_int_max_str_digits(0)
     s = str(scaled_pi).zfill(precision + 1)
     out = s[1:1+count]
     if not out.startswith(KNOWN_PREFIX):
