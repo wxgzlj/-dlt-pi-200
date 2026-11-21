@@ -100,22 +100,27 @@ def read_history(path: Path, cutoff: dt.datetime) -> tuple[dict[int,int],dict[in
     front_counts = {i:0 for i in range(1,36)}
     back_counts = {i:0 for i in range(1,13)}
     seen = set()
-    latest_publication = None
+    snapshot_times = set()
+    previous_date = None
     with path.open("r", encoding="utf-8-sig", newline="") as f:
         reader = csv.DictReader(f)
-        required = {"draw_id","published_at_utc","front","back"}
+        required = {"draw_id","draw_date","snapshot_retrieved_at_utc","front","back"}
         if not required.issubset(reader.fieldnames or []):
-            raise ValueError("history CSV must contain draw_id,published_at_utc,front,back")
+            raise ValueError("history CSV must contain draw_id,draw_date,snapshot_retrieved_at_utc,front,back")
         rows = list(reader)
     for row in rows:
         draw = row["draw_id"].strip()
         if not draw or draw in seen:
             raise ValueError("history contains empty or duplicate draw_id")
         seen.add(draw)
-        publication_time = parse_utc(row["published_at_utc"])
-        if publication_time >= cutoff:
-            raise ValueError(f"history row {draw} was not published strictly before forecast cutoff")
-        latest_publication = publication_time if latest_publication is None else max(latest_publication, publication_time)
+        draw_date = dt.date.fromisoformat(row["draw_date"])
+        if previous_date is not None and draw_date < previous_date:
+            raise ValueError("history rows are not sorted chronologically by draw_date")
+        previous_date = draw_date
+        snapshot_time = parse_utc(row["snapshot_retrieved_at_utc"])
+        if snapshot_time >= cutoff:
+            raise ValueError(f"history snapshot for row {draw} was completed at or after forecast cutoff")
+        snapshot_times.add(snapshot_time)
         front = [int(x) for x in row["front"].replace(",", " ").split()]
         back = [int(x) for x in row["back"].replace(",", " ").split()]
         if len(front)!=5 or len(set(front))!=5 or any(x<1 or x>35 for x in front):
@@ -124,8 +129,11 @@ def read_history(path: Path, cutoff: dt.datetime) -> tuple[dict[int,int],dict[in
             raise ValueError(f"invalid back numbers in history row {draw}")
         for x in front: front_counts[x]+=1
         for x in back: back_counts[x]+=1
-    latest_text = latest_publication.isoformat().replace("+00:00", "Z") if latest_publication else None
-    return front_counts, back_counts, len(rows), sha(raw), latest_text
+    if len(snapshot_times) != 1:
+        raise ValueError("history rows must share one snapshot completion timestamp; mixed snapshots are not allowed")
+    snapshot_time = next(iter(snapshot_times))
+    snapshot_text = snapshot_time.isoformat().replace("+00:00", "Z")
+    return front_counts, back_counts, len(rows), sha(raw), snapshot_text
 
 
 def pi_window_start(pi_digits: str, draw_id: str, zone: str) -> int:
@@ -255,7 +263,8 @@ def main():
                     "C":"integer PPS without replacement; weight=count+1; front/back marginal counts separately",
                     "C_D_PRNG":"SHA-256 counter stream; randbelow by rejection; no floating point"},
       "pi_source_sha256":sha(pi_raw.rstrip(b"\n")),"historical_snapshot_sha256":hist_hash,
-      "historical_draw_count":n_hist,"history_latest_publication_utc":latest_pub,
+      "historical_draw_count":n_hist,"history_snapshot_completed_at_utc":latest_pub,
+      "history_timestamp_policy":"snapshot completion time assigned to all rows; conservative availability proxy, not original publication time",
       "root_seed_hex":root.hex(),"root_seed_commitment_sha256":seed_hash,"seed_anchor":seed_anchor,"seed_derivation":"SHA256(root_seed_bytes || UTF8(experiment_id|draw_id|model_id))",
       "primary_endpoint":"per-draw mean front hits per ticket; paired model-vs-D",
       "secondary_endpoint":"per-draw mean back hits per ticket; paired model-vs-D",
