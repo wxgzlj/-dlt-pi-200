@@ -83,6 +83,21 @@ class TestPortfolioCovariance(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "duplicate draw_id"):
             analyze_panel(payloads)
 
+    def test_panel_computes_200_draw_covariance(self):
+        base = payload("SYNTH-0")
+        payloads = [dict(base, draw_id=f"SYNTH-{i}") for i in range(200)]
+        result = analyze_panel(payloads)
+        self.assertEqual(result["draw_count"], 200)
+        self.assertEqual(result["status"], "COMPUTED_FROM_FIXED_PORTFOLIOS_UNDER_UNIFORM_DRAW_NULL")
+        self.assertEqual(len(result["average_per_draw_paired_difference_covariance"]), 4)
+
+    def test_panel_rejects_source_tree_hash_mismatch(self):
+        base = payload("SYNTH-0")
+        bad = dict(base, code_sha256="9" * 64)
+        payloads = [dict(bad, draw_id=f"SYNTH-{i}") for i in range(200)]
+        with self.assertRaisesRegex(ValueError, "source code hash"):
+            analyze_panel(payloads)
+
     def test_panel_rejects_mixed_code_provenance(self):
         base = payload("SYNTH-0")
         payloads = [dict(base, draw_id=f"SYNTH-{i}") for i in range(200)]
