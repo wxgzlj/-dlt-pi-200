@@ -23,7 +23,7 @@ def valid_payload(root, now):
         "experiment_id": "DLT-PI-200", "draw_id": "TEST1",
         "scheduled_cutoff_utc": iso(now + dt.timedelta(hours=2)),
         "created_at_utc": iso(created_time), "game_rules_id": "test-rules",
-        "models": models, "tickets": {m: [dict(ticket, front=[1,2,3,4,5+i] if False else [1,2,3,4,5]) for _ in range(10)] for m in models},
+        "models": models, "tickets": {m: [{"front": [1, 2, 3, 4, 5+i], "back": [1, 2]} for i in range(10)] for m in models},
         "code_sha256": "0"*64, "analysis_plan_sha256": "1"*64, "primary_endpoint": "front hits",
         "root_seed_hex": seed.hex(), "root_seed_commitment_sha256": hashlib.sha256(seed).hexdigest(),
         "seed_anchor": {"seed_commitment_sha256": hashlib.sha256(seed).hexdigest(),
