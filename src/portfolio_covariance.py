@@ -164,6 +164,11 @@ def analyze_panel(payloads):
                        "historical_snapshot_sha256","history_audit_sha256",
                        "history_snapshot_completed_at_utc","historical_draw_count","game_rules_id")
     baseline={key:payloads[0].get(key) for key in provenance_fields}
+    if baseline["code_sha256"]!=current_source_hash():
+        raise ValueError("portfolio panel source code hash does not match current frozen src/ tree")
+    prereg=Path("PREREGISTRATION.md")
+    if prereg.exists() and baseline["analysis_plan_sha256"]!=sha(prereg.read_bytes()):
+        raise ValueError("portfolio panel analysis-plan hash does not match current PREREGISTRATION.md")
     baseline_parameters=json.dumps(payloads[0].get("parameters"),sort_keys=True,separators=(",",":"))
     for payload in payloads[1:]:
         for key in provenance_fields:
