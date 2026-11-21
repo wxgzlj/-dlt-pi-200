@@ -183,3 +183,20 @@ Confirmatory cohort remains **0/200**; no forecast has been committed for the co
 - Local isolated harness results: 8/8 history-auditor tests, 9/9 covariance-aware power tests, and 7/7 exact portfolio-covariance tests passed. The separate six-case history-schema harness also passed earlier.
 - These are targeted local checks of the revised algorithms/fixtures, not a substitute for running the repository's full Python 3.11/3.12 GitHub Actions workflow. The latest repository CI result remains **NOT VERIFIED**.
 - The fetch-history mocked integration test and full generator→commit→reveal→verify round-trip still require repository CI and end-to-end execution.
+
+
+## Addendum — public history evidence and dual-anchor publication tooling (2026-11-21)
+
+Implemented:
+- `src/build_evidence_bundle.py` builds a fail-closed content-addressed public bundle from a clean `PASS` audit. It copies the normalized CSV, raw API pages, manifest/source bundle, preserved official calendar source, calendar attestation and audit report; emits a file-by-file SHA-256/byte manifest and verifies the exact manifest-file bytes.
+- `HISTORY_EVIDENCE_PROTOCOL.md` defines the candidate → human official-calendar reconciliation → audit → public bundle → GitHub commit anchor → OpenTimestamps proof sequence.
+- `.github/workflows/publish-history-evidence.yml` publishes only a committed candidate snapshot with a clean official-calendar audit, stamps the exact manifest file with OpenTimestamps, pushes the evidence bundle, and records the full GitHub bundle commit SHA/time and receipt path.
+
+Not yet executed / not verified:
+- No real current official snapshot, separately preserved official calendar document, or human-verified calendar attestation has been supplied or audited.
+- No public evidence bundle has been published; no GitHub evidence anchor exists yet.
+- The OpenTimestamps workflow has not been run; its receipt must be upgraded and independently verified after Bitcoin-calendar confirmation. A pending receipt is not a confirmed timestamp.
+- The new script and workflow have not yet been run in GitHub Actions; CI and a tamper test for the evidence bundle remain outstanding.
+- Generator payload schema does not yet bind the public evidence-manifest hash and verified anchor identifiers.
+
+Therefore this tooling implementation does **not** close the history evidence gate. Do not generate the 200-payload portfolio panel or model-specific power report until the above evidence and anchor checks pass. Confirmatory cohort remains **0/200**.
