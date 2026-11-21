@@ -24,7 +24,7 @@ python src/generate_forecast.py --draw-id DRAW_ID --cutoff-utc YYYY-MM-DDTHH:MM:
 python src/prospective.py commit private/forecast_27001.json
 ```
 
-Use the actual next eligible draw ID and its official cutoff; the values above are examples, not a live forecast. The commit command independently validates the seed hash, seed-anchor binding, timezone-aware anchor and forecast timestamps, exact five models, ten tickets per model, ranges, uniqueness and cutoff. It then stores payload+nonce in the ignored private vault and appends a COMMIT event. The anchor JSON is not cryptographically verified against GitHub by the script; verify its URL, full commit SHA and actual commit time externally before committing.
+Use the actual next eligible draw ID and its official cutoff; the values above are examples, not a live forecast. Require the history audit to return PASS before forecast generation; investigate any warning against the official draw calendar. The commit command independently validates the seed hash, seed-anchor binding, timezone-aware anchor and forecast timestamps, exact five models, ten tickets per model, ranges, uniqueness and cutoff. It then stores payload+nonce in the ignored private vault and appends a COMMIT event. The anchor JSON is not cryptographically verified against GitHub by the script; verify its URL, full commit SHA and actual commit time externally before committing.
 
 Before the cutoff, publish the updated `ledger/events.jsonl` in a Git commit. Record the Git commit URL/SHA in the experiment log. For stronger independent timestamping, mirror the commitment hash and ledger head to a second public append-only timestamp service. A local file or Git commit alone is not absolute immutability.
 
