@@ -41,14 +41,15 @@ Only after the public seed commitment has been timestamped:
 python src/generate_forecast.py \
   --draw-id 26134 \
   --cutoff-utc "YYYY-MM-DDTHH:MM:SSZ" \
-  --history data/history_snapshot/history_snapshot.csv \
+  --history data/history_snapshot/<snapshot_id>/history_snapshot.csv \
+  --history-audit data/history_snapshot/<snapshot_id>/audit.json \
   --seed-file private/seeds/26134.seed \
   --seed-commitment ledger/seed_commitments/26134.json \
   --seed-anchor ledger/seed_commitments/26134.anchor.json \
   --output private/26134.forecast.json
 \`\`\`
 
-The generator checks that the private seed hashes to the public commitment, that the experiment/draw identifiers match, and that the anchor timestamp precedes the cutoff. It includes the seed hash and anchor reference in the forecast payload.
+The generator checks that the private seed hashes to the public commitment, that the experiment/draw identifiers match, that the anchor precedes forecast creation and cutoff, and that the supplied history-audit report is PASS and matches the exact CSV hash, row count and snapshot completion timestamp. It includes the seed hash, anchor reference and history-audit report/hash in the forecast payload.
 
 Then validate and commit the forecast using the commit–reveal process. Do not rerun generation with a replacement seed. A technical failure is a recorded failure, not permission to draw another seed.
 
