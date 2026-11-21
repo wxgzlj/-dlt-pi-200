@@ -85,3 +85,8 @@ Before activation:
 5. Do not change the approved 200-draw horizon or +0.10 MDE if power is inadequate; report the limitation.
 
 No predictive edge, adequate power, or economic value is established by this report.
+
+
+## Automated reproduction
+
+The repository workflow `.github/workflows/power-analysis.yml` reruns the 100,000-replicate-per-scenario analysis on CPython 3.12, executes the power-analysis tests, uploads the JSON artifact, and commits the generated report. The committed JSON is the canonical runtime-specific output; this document's preliminary numeric table must be reconciled to that output before the report is treated as final planning evidence.
