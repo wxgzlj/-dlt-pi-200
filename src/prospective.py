@@ -76,40 +76,6 @@ def cmd_commit(args):
     validate_seed_provenance(obj, cutoff_utc)
     if dt.datetime.now(dt.timezone.utc) >= cutoff_utc:
         raise ValueError("forecast cutoff has passed; this record cannot enter the confirmatory cohort")
-    # Defense in depth: enforce the seed ceremony at the ledger boundary too.
-    seed_hex=obj.get("root_seed_hex")
-    seed_hash=obj.get("root_seed_commitment_sha256")
-    anchor=obj.get("seed_anchor")
-    if not isinstance(seed_hex,str) or len(seed_hex)!=64:
-        raise ValueError("payload must include the 32-byte root_seed_hex")
-    try:
-        seed_bytes=bytes.fromhex(seed_hex)
-    except ValueError:
-        raise ValueError("root_seed_hex is not valid hexadecimal")
-    if len(seed_bytes)!=32 or sha(seed_bytes)!=seed_hash:
-        raise ValueError("root seed does not match root_seed_commitment_sha256")
-    if not isinstance(anchor,dict):
-        raise ValueError("payload must include the pre-draw seed_anchor attestation")
-    if anchor.get("seed_commitment_sha256")!=seed_hash:
-        raise ValueError("seed anchor does not bind the committed root seed")
-    if not anchor.get("anchor_url") or not anchor.get("anchor_commit_sha"):
-        raise ValueError("seed anchor URL and full commit SHA are required")
-    anchor_text=str(anchor.get("anchored_at_utc","")).replace("Z","+00:00")
-    try:
-        anchor_time=dt.datetime.fromisoformat(anchor_text)
-    except ValueError:
-        raise ValueError("seed anchor timestamp is invalid")
-    if anchor_time.tzinfo is None or anchor_time.astimezone(dt.timezone.utc)>=cutoff_utc:
-        raise ValueError("seed anchor must be timezone-aware and strictly before forecast cutoff")
-    created_text=str(obj.get("created_at_utc","")).replace("Z","+00:00")
-    try:
-        created_time=dt.datetime.fromisoformat(created_text)
-    except ValueError:
-        raise ValueError("forecast created_at_utc is missing or invalid")
-    if created_time.tzinfo is None or created_time.astimezone(dt.timezone.utc)>=cutoff_utc:
-        raise ValueError("forecast creation timestamp must be timezone-aware and before cutoff")
-    if created_time.astimezone(dt.timezone.utc)<anchor_time.astimezone(dt.timezone.utc):
-        raise ValueError("forecast was created before the seed commitment anchor")
     if obj.get("draw_id")!=draw or obj.get("experiment_id")!=exp:
         raise ValueError("payload experiment/draw identifiers are inconsistent")
     # Validate the complete registered portfolio: same ticket budget and valid, unique DLT combinations.
