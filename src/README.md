@@ -2,7 +2,8 @@
 
 - `fetch_history.py`: retrieves paginated draw records from the official Sports Lottery API (`gameNo=85`), stores raw page responses, and creates a normalized CSV plus SHA-256 manifest.
 - `pi_digits.py`: deterministic Chudnovsky binary-splitting π digit generator; standard library only.
-- `generate_forecast.py`: builds all five model portfolios and the canonical pre-draw payload.
+- `generate_forecast.py`: builds all five model portfolios only from a previously committed seed and timestamp-attestation file.
+- `seed_ceremony.py`: creates exactly one 32-byte seed and its public SHA-256 commitment per draw using exclusive file creation.
 - `prospective.py`: commit–reveal event ledger; stores the unrevealed payload and nonce only in the ignored local `private/` vault.
 - `audit_draw.py`: scores every ticket after the draw and reports descriptive results without claiming a one-draw edge.
 - `tests/`: unit tests for the generator and π digit source.
@@ -12,12 +13,13 @@ Suggested preparation:
 ```bash
 python src/fetch_history.py --output-dir data/history_snapshot
 python src/pi_digits.py --digits 600000 --output data/pi_digits_600000.txt
+# Follow SEED_CEREMONY.md before running the forecast generator.
 python -m unittest discover -s tests -v
 python src/prospective.py verify
 ```
 
 The history downloader records the retrieval timestamp as `published_at_utc` for every row. This is a conservative snapshot-time proxy, not the exact original publication timestamp. A snapshot can only be used for a forecast cutoff strictly later than its retrieval time. It never backdates data.
 
-The forecast generator intentionally fails closed on invalid history, post-cutoff history rows, invalid ticket structure, insufficient π digits, or duplicate portfolios. It does not publish commitments by itself. Run `python src/prospective.py commit <payload.json>` to append a COMMIT event, then publish `ledger/events.jsonl` before the cutoff. After the result, run `python src/prospective.py reveal <experiment_id> <draw_id> <result.json>`. The private vault must never be committed.
+The forecast generator intentionally fails closed on invalid history, post-cutoff history rows, invalid ticket structure, insufficient π digits, mismatched seed commitments, missing/late anchor attestations, or duplicate portfolios. The anchor JSON is operator-verified; the script does not independently query GitHub. It does not publish commitments by itself. Run `python src/prospective.py commit <payload.json>` to append a COMMIT event, then publish `ledger/events.jsonl` before the cutoff. After the result, run `python src/prospective.py reveal <experiment_id> <draw_id> <result.json>`. The private vault must never be committed.
 
 The approved experiment parameter is 600,000 decimal digits, not 1,000,000. Before use, preserve the API raw pages, manifest, CSV, π source file, exact Python runtime version, and source-code hashes. Seed anti-reroll and power/inference implementation are still activation blockers. Do not assume pagination completion alone proves historical completeness; audit issue continuity and source revisions.
