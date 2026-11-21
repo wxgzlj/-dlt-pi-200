@@ -101,8 +101,10 @@ def verify_history_audit(path: Path, csv_hash: str, row_count: int, snapshot_com
         raise ValueError("history audit status must be PASS; warnings or failures require resolution before generation")
     if report.get("errors") or report.get("warnings"):
         raise ValueError("history audit must have empty errors and warnings")
-    if report.get("continuity_status")!="VERIFIED_AGAINST_OFFICIAL_CALENDAR" or not report.get("calendar_attestation_sha256"):
-        raise ValueError("history audit must contain a verified official draw-calendar attestation")
+    if (report.get("continuity_status")!="VERIFIED_AGAINST_OFFICIAL_CALENDAR"
+            or not report.get("calendar_attestation_sha256")
+            or not report.get("calendar_source_document_sha256")):
+        raise ValueError("history audit must contain a verified official calendar and raw source-document hash")
     if report.get("csv_sha256_computed")!=csv_hash:
         raise ValueError("history audit CSV hash does not match the supplied history file")
     if report.get("draw_count")!=row_count:
