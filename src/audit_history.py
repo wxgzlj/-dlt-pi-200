@@ -243,7 +243,7 @@ def main():
     out.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     print(json.dumps({"status": result["status"], "errors": len(result["errors"]),
                       "warnings": len(result["warnings"]), "output": str(out)}, indent=2))
-    if result["errors"]:
+    if result["status"] != "PASS":
         raise SystemExit(2)
 
 
