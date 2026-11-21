@@ -1,0 +1,109 @@
+name: Publish audited history evidence
+
+on:
+  workflow_dispatch:
+    inputs:
+      snapshot_dir:
+        description: "Committed candidate snapshot directory containing raw/, manifest.json, history_snapshot.csv, source_bundle.json, calendar_attestation.json and the raw official calendar document"
+        required: true
+        type: string
+      snapshot_id:
+        description: "Immutable evidence directory ID, e.g. 2026-11-21T235900Z"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Validate input paths
+        env:
+          SNAPSHOT_DIR: ${{ inputs.snapshot_dir }}
+          SNAPSHOT_ID: ${{ inputs.snapshot_id }}
+        run: |
+          python - <<'PY'
+          import os
+          from pathlib import PurePosixPath
+          d=PurePosixPath(os.environ["SNAPSHOT_DIR"])
+          i=PurePosixPath(os.environ["SNAPSHOT_ID"])
+          if d.is_absolute() or ".." in d.parts or not str(d).startswith("data/"):
+              raise SystemExit("snapshot_dir must be a repository-relative path under data/")
+          if i.is_absolute() or ".." in i.parts or len(i.parts)!=1:
+              raise SystemExit("snapshot_id must be one safe path component")
+          PY
+      - name: Require source files and audit official calendar
+        env:
+          SNAPSHOT_DIR: ${{ inputs.snapshot_dir }}
+        run: |
+          test -f "$SNAPSHOT_DIR/manifest.json"
+          test -f "$SNAPSHOT_DIR/history_snapshot.csv"
+          test -f "$SNAPSHOT_DIR/source_bundle.json"
+          test -d "$SNAPSHOT_DIR/raw"
+          test -f "$SNAPSHOT_DIR/calendar_attestation.json"
+          python src/audit_history.py \
+            --snapshot-dir "$SNAPSHOT_DIR" \
+            --calendar-attestation "$SNAPSHOT_DIR/calendar_attestation.json" \
+            --output "$SNAPSHOT_DIR/audit_report.json"
+          python - <<'PY'
+          import json, os
+          p=os.path.join(os.environ["SNAPSHOT_DIR"],"audit_report.json")
+          r=json.load(open(p,encoding="utf-8"))
+          if r.get("status")!="PASS" or r.get("errors") or r.get("warnings"):
+              raise SystemExit("History audit is not a clean PASS; refusing publication")
+          PY
+      - name: Build and verify content-addressed bundle
+        env:
+          SNAPSHOT_DIR: ${{ inputs.snapshot_dir }}
+          SNAPSHOT_ID: ${{ inputs.snapshot_id }}
+        run: |
+          OUT="evidence/history/$SNAPSHOT_ID"
+          python src/build_evidence_bundle.py build \
+            --snapshot-dir "$SNAPSHOT_DIR" \
+            --audit-report "$SNAPSHOT_DIR/audit_report.json" \
+            --output-dir "$OUT"
+          python src/build_evidence_bundle.py verify --bundle-dir "$OUT"
+      - name: Create independent OpenTimestamps proof
+        run: |
+          python -m pip install --disable-pip-version-check opentimestamps-client
+          ots stamp "evidence/history/${{ inputs.snapshot_id }}/evidence_manifest.json"
+          test -s "evidence/history/${{ inputs.snapshot_id }}/evidence_manifest.json.ots"
+      - name: Publish bundle and timestamp receipt
+        env:
+          SNAPSHOT_ID: ${{ inputs.snapshot_id }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "evidence/history/$SNAPSHOT_ID"
+          git commit -m "Publish audited DLT history evidence $SNAPSHOT_ID"
+          git push origin HEAD:main
+          BUNDLE_COMMIT="$(git rev-parse HEAD)"
+          BUNDLE_TIME="$(git show -s --format=%cI "$BUNDLE_COMMIT")"
+          MANIFEST_SHA="$(cat "evidence/history/$SNAPSHOT_ID/evidence_manifest.sha256" | awk '{print $1}')"
+          python - <<'PY'
+          import json, os
+          p=f"evidence/history/{os.environ['SNAPSHOT_ID']}/ANCHOR.json"
+          obj={
+            "schema":"DLT-PI-200-HISTORY-ANCHOR-v1",
+            "manifest_sha256":os.environ["MANIFEST_SHA"],
+            "github_bundle_commit_sha":os.environ["BUNDLE_COMMIT"],
+            "github_commit_time":os.environ["BUNDLE_TIME"],
+            "github_commit_url":f"https://github.com/${{ github.repository }}/commit/{os.environ['BUNDLE_COMMIT']}",
+            "opentimestamps_receipt":"evidence_manifest.json.ots",
+            "opentimestamps_status":"PENDING_CONFIRMATION_UNTIL_UPGRADED_AND_VERIFIED",
+            "policy":"Do not generate the 200-payload panel until the GitHub commit is independently fetched and the OpenTimestamps proof verifies."
+          }
+          open(p,"w",encoding="utf-8").write(json.dumps(obj,ensure_ascii=False,indent=2)+"\n")
+          PY
+          git add "evidence/history/$SNAPSHOT_ID/ANCHOR.json"
+          git commit -m "Record public anchors for DLT history evidence $SNAPSHOT_ID"
+          git push origin HEAD:main
