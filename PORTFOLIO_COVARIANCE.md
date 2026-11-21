@@ -33,6 +33,8 @@ Input is one JSON forecast payload or a JSONL panel of exactly 200 payloads. Eac
 - a non-empty, unique `draw_id`
 - exactly models A, B1, B2, C, D
 - ten distinct legal front tickets per model
+- identical source-code, preregistration, π-source, history-snapshot, history-audit and game-rule hashes across all 200 payloads
+- a PASS history-audit object whose canonical hash matches the payload
 
 Single-payload diagnostic:
 
@@ -46,7 +48,7 @@ python src/portfolio_covariance.py --payload private/forecast.json --output resu
 python src/portfolio_covariance.py --panel-jsonl data/simulation_portfolio_panel.jsonl --output results/portfolio_covariance.json
 ```
 
-The panel output includes the average per-draw paired-difference covariance and the covariance of the 200-draw mean. It also retains draw-level exposure and covariance diagnostics.
+The panel analyzer verifies that the payload source-code hash matches the current `src/` tree and that the analysis-plan hash matches the current `PREREGISTRATION.md`. It rejects mixed code/data/parameter versions. The panel output includes the average per-draw paired-difference covariance and the covariance of the 200-draw mean. It also retains draw-level exposure and covariance diagnostics.
 
 Feed the panel output into the covariance-aware power engine:
 
