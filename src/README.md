@@ -20,7 +20,7 @@ python -m unittest discover -s tests -v
 python src/prospective.py verify
 ```
 
-The history downloader records the retrieval timestamp as `published_at_utc` for every row. This is a conservative snapshot-time proxy, not the exact original publication timestamp. A snapshot can only be used for a forecast cutoff strictly later than its retrieval time. It never backdates data.
+The history downloader records the snapshot completion time as `snapshot_retrieved_at_utc` for every row. This is a conservative availability proxy, not the exact original publication timestamp. It rechecks page 1 after pagination to detect a shifting API result set, refuses to overwrite an existing snapshot, and only permits use when snapshot completion strictly precedes the forecast cutoff.
 
 The forecast generator intentionally fails closed on invalid history, post-cutoff history rows, invalid ticket structure, insufficient π digits, mismatched seed commitments, missing/late anchor attestations, or duplicate portfolios. The preliminary power report is a parametric reference only; model-specific covariance calibration and integration with `power_analysis.py` remain open. The anchor JSON is operator-verified; the script does not independently query GitHub. It does not publish commitments by itself. Run `python src/prospective.py commit <payload.json>` to append a COMMIT event, then publish `ledger/events.jsonl` before the cutoff. After the result, run `python src/prospective.py reveal <experiment_id> <draw_id> <result.json>`. The private vault must never be committed.
 
