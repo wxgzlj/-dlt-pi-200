@@ -1,3 +1,4 @@
+import csv
 import json
 import sys
 import tempfile
@@ -54,7 +55,16 @@ class TestFetchHistory(unittest.TestCase):
         self.assertEqual(manifest["draw_count"], 3)
         self.assertEqual(manifest["first_draw_id"], "26129")
         self.assertEqual(manifest["last_draw_id"], "26131")
-        result = audit_snapshot(self.out, "2026-11-22T00:00:00Z")
+        with (self.out / "history_snapshot.csv").open("r", encoding="utf-8", newline="") as f:
+            rows = list(csv.DictReader(f))
+        calendar_path = self.out / "calendar_attestation.json"
+        calendar_path.write_text(json.dumps({
+            "status": "VERIFIED",
+            "source_url": "https://www.sporttery.cn/official/dlt-calendar",
+            "retrieved_at_utc": "2098-12-31T23:00:00Z",
+            "draw_records": [{"draw_id": row["draw_id"], "draw_date": row["draw_date"]} for row in rows],
+        }))
+        result = audit_snapshot(self.out, "2099-01-01T00:00:00Z", calendar_path)
         self.assertEqual(result["status"], "PASS")
 
     def test_page_one_change_fails_closed(self):
