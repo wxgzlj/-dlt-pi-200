@@ -24,6 +24,8 @@ def validate_covariance_panel(panel):
         raise ValueError("portfolio covariance panel must contain exactly 200 draws")
     if panel.get("paired_difference_models")!=["A","B1","B2","C"]:
         raise ValueError("portfolio covariance model order must be A,B1,B2,C")
+    if not panel.get("parameters_sha256"):
+        raise ValueError("portfolio covariance panel is missing the frozen parameter hash")
     provenance=panel.get("frozen_provenance")
     required=("code_sha256","analysis_plan_sha256","pi_source_sha256",
               "historical_snapshot_sha256","history_audit_sha256",
