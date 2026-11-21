@@ -104,3 +104,12 @@ Confirmatory cohort remains **0/200**; no forecast has been committed for the co
 - Local power-engine tests: 5/5 passed on CPython 3.13.5. GitHub Actions execution for the new workflow/test combination has not yet been independently inspected; do not mark CI PASS.
 - Provenance: source SHA-256 `2983612aa9b810a04c52b4ba47d4ddf1aa7fc1b2b286ce5f5ed22be40af6080a`; power-plan SHA-256 `8c2fbc79bb9047fa8805b7d45e00dbb3f1abbe46d03fb3b9adb19a1fc75fe465`; preregistration reference commit `d64002531a9a6661c533cb47acdc48d8a89e2ead`.
 - Critical limitations: this is a parametric location-shift planning model, not a physical lottery alternative or backtest. It assumes independent candidate residual vectors; it does not calibrate A/B1/B2 dependence induced by shared π windows or actual C/D portfolio exposure. Final confirmatory test and CI method remain unfrozen. **Power adequacy remains NOT CERTIFIED; cohort remains 0/200.**
+
+
+## Addendum — exact portfolio exposure covariance module (2026-11-21)
+
+- Added `src/portfolio_covariance.py`, `tests/test_portfolio_covariance.py`, and `PORTFOLIO_COVARIANCE.md`.
+- For each fixed ten-ticket portfolio, the module converts tickets into 35-number exposure counts and computes the exact covariance of model mean-hit scores under a uniform 5-of-35 winning draw. It then constructs the full 4×4 covariance matrix for A-D, B1-D, B2-D and C-D, including shared-control and cross-model overlap effects.
+- For a 200-payload panel it requires exactly 200 distinct non-empty draw IDs and reports average per-draw covariance plus covariance of the 200-draw mean. It rejects duplicate tickets and invalid front-zone values.
+- The analytic covariance formula was checked against exhaustive enumeration on a smaller finite population. Six local tests passed on CPython 3.13.5, including duplicate draw-ID rejection and the identical-portfolio zero-variance invariant.
+- This closes an important mathematical tooling gap but does **not** yet produce a real model-specific power estimate: no verified 200-payload panel exists, the verified C-history snapshot is still missing, and the power engine has not yet been integrated with this covariance matrix. Power adequacy remains NOT CERTIFIED; confirmatory cohort remains 0/200.
