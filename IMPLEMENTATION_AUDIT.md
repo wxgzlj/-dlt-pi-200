@@ -131,3 +131,12 @@ Confirmatory cohort remains **0/200**; no forecast has been committed for the co
 - Candidate numeric issue gaps and duplicate draw dates are reported as warnings requiring the official draw calendar; they are not silently classified as missing draws.
 - Four local synthetic-fixture audit tests passed on CPython 3.13.5, including detection of CSV tampering, raw-page tampering and post-cutoff snapshots. The six history-schema tests also passed locally. GitHub Actions results remain unverified.
 - The auditor does not fetch or independently certify the official draw calendar, and a single snapshot cannot reveal all historical corrections. Cross-snapshot comparison remains open.
+
+
+## Addendum — history audit bound into generation and commit (2026-11-21)
+
+- `generate_forecast.py` now requires `--history-audit` and rejects any audit report not exactly `PASS`, any warnings/errors, or mismatches in CSV SHA-256, row count, or snapshot-completion timestamp. The audit report and its canonical SHA-256 are embedded in the forecast payload.
+- `prospective.py` independently revalidates the embedded audit report at the commit boundary: canonical report hash, PASS status, no warnings/errors, exact history CSV hash, draw count, and snapshot completion timestamp must all match. A hand-built payload cannot bypass the history audit gate.
+- Added `tests/test_history_audit_gate.py` for generator and commit-layer acceptance/rejection cases. CI result remains to be independently inspected.
+- Updated `SEED_CEREMONY.md` and `LEDGER_SCHEMA.md` examples to require the audit report and seed provenance inputs.
+- Activation remains blocked until a real official snapshot is fetched into a fresh timestamped directory, audited with no unresolved warnings, and the audit-bound generator/commit/reveal path passes end-to-end tests. Confirmatory cohort remains 0/200.
