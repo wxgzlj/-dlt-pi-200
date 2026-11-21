@@ -39,7 +39,7 @@ Only after the public seed commitment has been timestamped:
 python src/generate_forecast.py \
   --draw-id 26134 \
   --cutoff-utc "YYYY-MM-DDTHH:MM:SSZ" \
-  --history data/history_snapshot/history.csv \
+  --history data/history_snapshot/history_snapshot.csv \
   --seed-file private/seeds/26134.seed \
   --seed-commitment ledger/seed_commitments/26134.json \
   --seed-anchor ledger/seed_commitments/26134.anchor.json \
