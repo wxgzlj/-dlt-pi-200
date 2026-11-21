@@ -81,6 +81,71 @@ def mcse(p,n):
     return math.sqrt(q*(1-q)/n)
 
 
+def cholesky_psd(matrix):
+    n=len(matrix)
+    if n==0 or any(len(row)!=n for row in matrix):
+        raise ValueError("covariance matrix must be non-empty and square")
+    lower=[[0.0]*n for _ in range(n)]
+    for i in range(n):
+        for j in range(i+1):
+            if not math.isclose(matrix[i][j],matrix[j][i],rel_tol=1e-9,abs_tol=1e-12):
+                raise ValueError("covariance matrix must be symmetric")
+            value=matrix[i][j]-sum(lower[i][k]*lower[j][k] for k in range(j))
+            if i==j:
+                if value < -1e-10:
+                    raise ValueError("covariance matrix is not positive semidefinite")
+                lower[i][j]=math.sqrt(max(value,0.0))
+            elif lower[j][j] > 1e-12:
+                lower[i][j]=value/lower[j][j]
+            elif abs(value)>1e-8:
+                raise ValueError("singular covariance matrix failed PSD factorization")
+    return lower
+
+
+def simulate_covariance(reps,effect,sd_mult,seed,covariance,target_index=0,target_model="A"):
+    """Multivariate-t power simulation from a supplied draw-level covariance matrix.
+
+    The average per-draw covariance is treated as the common covariance for
+    the 200 draw-level observations. Bartlett's Wishart construction preserves
+    the cross-comparison dependence from the shared control.
+    """
+    rng=random.Random(seed); df=N-1; p=NTEST
+    scaled=[[float(covariance[i][j])*sd_mult*sd_mult for j in range(p)] for i in range(p)]
+    lower=cholesky_psd(scaled)
+    anyrej=target=0
+    for _ in range(reps):
+        z=[rng.gauss(0,1) for _ in range(p)]
+        means=[sum(lower[i][k]*z[k] for k in range(i+1))/math.sqrt(N) for i in range(p)]
+        a=[[0.0]*p for _ in range(p)]
+        for i in range(p):
+            a[i][i]=math.sqrt(rng.gammavariate((df-i)/2,2))
+            for j in range(i):
+                a[i][j]=rng.gauss(0,1)
+        b=[[sum(lower[i][k]*a[k][j] for k in range(j+1)) for j in range(i+1)] for i in range(p)]
+        ps=[]
+        for i in range(p):
+            ss=sum(value*value for value in b[i])
+            sample_var=ss/df
+            shift=effect if i==target_index else 0.0
+            if sample_var<=1e-15:
+                stat=math.inf if shift>0 else (-math.inf if shift<0 else 0.0)
+            else:
+                stat=(means[i]+shift)/math.sqrt(sample_var/N)
+            ps.append(t_p(stat,df))
+        rejected=holm(ps)
+        anyrej += bool(rejected)
+        target += target_index in rejected
+    family=anyrej/reps; power=target/reps
+    return {
+        "effect":effect,"sd_multiplier":sd_mult,"simulations":reps,
+        "target_comparison":f"{target_model}_vs_D",
+        "target_power":power,"target_power_mcse":mcse(power,reps),
+        "target_power_mc_95_wilson":wilson(power,reps),
+        "family_rejection_rate":family,"family_rejection_mcse":mcse(family,reps),
+        "family_rejection_mc_95_wilson":wilson(family,reps)
+    }
+
+
 def simulate(reps,effect,sd_mult,seed):
     rng=random.Random(seed); df=N-1
     delta=effect*math.sqrt(N)/(paired_sd()*sd_mult)
@@ -111,15 +176,23 @@ def simulate(reps,effect,sd_mult,seed):
     }
 
 
-def report(reps,seed):
-    curve=[simulate(reps,e,1.0,seed+i*100003) for i,e in enumerate(EFFECTS)]
-    stress=[simulate(reps,MDE,m,seed+900001+i*100003) for i,m in enumerate((1.25,1.5,2.0))]
+def report(reps,seed,covariance=None,target_model="A",covariance_source="REFERENCE_ANALYTIC"):
+    target_index=("A","B1","B2","C").index(target_model)
+    if covariance is None:
+        run=lambda reps,e,m,s: simulate(reps,e,m,s)
+    else:
+        run=lambda reps,e,m,s: simulate_covariance(reps,e,m,s,covariance,target_index,target_model)
+    curve=[run(reps,e,1.0,seed+i*100003) for i,e in enumerate(EFFECTS)]
+    stress=[run(reps,MDE,m,seed+900001+i*100003) for i,m in enumerate((1.25,1.5,2.0))]
     return {
         "experiment_id":"DLT-PI-200",
         "analysis_type":"PARAMETRIC_MONTE_CARLO_POWER_PLANNING_NOT_BACKTEST",
         "generated_at_utc":dt.datetime.now(dt.timezone.utc).isoformat().replace("+00:00","Z"),
         "runtime":{"python":platform.python_version(),"implementation":platform.python_implementation(),
                    "prng":"random.Random MT19937","base_seed":seed},
+        "covariance_source":covariance_source,
+        "portfolio_paired_difference_covariance_matrix":covariance,
+        "target_model":target_model,
         "design":{"draws":N,"tickets_per_model_per_draw":T,
                   "endpoint":"draw-level mean front hits per ticket",
                   "comparisons":["A-D","B1-D","B2-D","C-D"],
@@ -147,15 +220,28 @@ def main():
     ap.add_argument("--seed",type=int,default=SEED)
     ap.add_argument("--output",default="results/power_analysis_preliminary.json")
     ap.add_argument("--power-plan",default="POWER_ANALYSIS_PLAN.md")
+    ap.add_argument("--portfolio-covariance",help="200-payload output from portfolio_covariance.py")
+    ap.add_argument("--target-model",choices=("A","B1","B2","C"),default="A")
     ap.add_argument("--preregistration-commit",default="d64002531a9a6661c533cb47acdc48d8a89e2ead")
     ap.add_argument("--allow-small-run",action="store_true")
     a=ap.parse_args()
     if a.simulations<100000 and not a.allow_small_run: ap.error("at least 100,000 simulations per scenario required")
-    out=report(a.simulations,a.seed)
+    covariance=None
+    covariance_source="REFERENCE_ANALYTIC"
+    if a.portfolio_covariance:
+        panel=json.loads(Path(a.portfolio_covariance).read_text(encoding="utf-8"))
+        if panel.get("draw_count")!=N or panel.get("paired_difference_models")!=["A","B1","B2","C"]:
+            ap.error("portfolio covariance must come from a 200-draw A/B1/B2/C panel")
+        covariance=panel.get("average_per_draw_paired_difference_covariance")
+        if not isinstance(covariance,list) or len(covariance)!=NTEST:
+            ap.error("portfolio covariance matrix must be 4x4")
+        covariance_source=sha(Path(a.portfolio_covariance).read_bytes())
+    out=report(a.simulations,a.seed,covariance,a.target_model,covariance_source)
     out["provenance"]={
         "source_code_sha256":hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
         "power_plan_sha256":hashlib.sha256(Path(a.power_plan).read_bytes()).hexdigest(),
-        "preregistration_commit":a.preregistration_commit}
+        "preregistration_commit":a.preregistration_commit,
+        "portfolio_covariance_sha256":covariance_source if a.portfolio_covariance else None}
     p=Path(a.output); p.parent.mkdir(parents=True,exist_ok=True)
     p.write_text(json.dumps(out,indent=2,sort_keys=True)+"\n",encoding="utf-8")
     mde=next(x["target_power"] for x in out["power_curve"] if x["effect"]==MDE)
