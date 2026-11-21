@@ -38,13 +38,15 @@ Before forecast generation, independently reconcile every issue ID and draw date
   "status": "VERIFIED",
   "source_url": "https://www.sporttery.cn/<official-calendar-path>",
   "retrieved_at_utc": "<timezone-aware UTC timestamp before cutoff>",
+  "source_document_file": "calendar_source.html",
+  "source_document_sha256": "<SHA-256 of preserved raw official calendar document>",
   "draw_records": [
     {"draw_id": "<issue>", "draw_date": "YYYY-MM-DD"}
   ]
 }
 ```
 
-The `draw_records` list must exactly match the snapshot's full issue-ID/date set; do not infer or fill missing issues. Then run `python src/audit_history.py --snapshot-dir data/history_snapshot/<snapshot_id> --cutoff-utc "<official-cutoff-utc>" --calendar-attestation data/history_snapshot/<snapshot_id>/calendar_attestation.json --output data/history_snapshot/<snapshot_id>/audit.json` and require `status=PASS` with no warnings or errors. The calendar source must be on the official `sporttery.cn` domain and its retrieval timestamp must precede cutoff. Use the same audited CSV path below.
+The raw official calendar document must be preserved as `calendar_source.html` (or another relative file inside the snapshot directory), and its SHA-256 must match `source_document_sha256`. The `draw_records` list must exactly match the snapshot's full issue-ID/date set; do not infer or fill missing issues. Then run `python src/audit_history.py --snapshot-dir data/history_snapshot/<snapshot_id> --cutoff-utc "<official-cutoff-utc>" --calendar-attestation data/history_snapshot/<snapshot_id>/calendar_attestation.json --output data/history_snapshot/<snapshot_id>/audit.json` and require `status=PASS` with no warnings or errors. The calendar source must be on the official `sporttery.cn` domain and its retrieval timestamp must precede cutoff. Use the same audited CSV path below.
 
 ## 3. Generate forecast once
 
