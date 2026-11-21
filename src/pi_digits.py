@@ -40,8 +40,6 @@ def pi_fraction_digits(count: int) -> str:
     scale = 10**precision
     sqrt_scaled = isqrt(10005 * scale * scale)
     scaled_pi = (426880 * sqrt_scaled * q) // t
-    # Python 3.11+ limits int-to-decimal conversion by default; this is a
-    # deliberate, bounded conversion of our own computed integer.
     if hasattr(sys, "set_int_max_str_digits"):
         sys.set_int_max_str_digits(0)
     s = str(scaled_pi).zfill(precision + 1)
@@ -53,8 +51,8 @@ def pi_fraction_digits(count: int) -> str:
 
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--digits", type=int, default=1_000_000)
-    ap.add_argument("--output", default="data/pi_digits_1000000.txt")
+    ap.add_argument("--digits", type=int, default=600_000)
+    ap.add_argument("--output", default="data/pi_digits_600000.txt")
     args = ap.parse_args()
     digits = pi_fraction_digits(args.digits)
     path = Path(args.output)
