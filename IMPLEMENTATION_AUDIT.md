@@ -16,10 +16,10 @@
 | π known-prefix check | PASS | First 50 decimal digits match the embedded known prefix |
 | π window allocation smoke test | PASS | Five draw identifiers × A/B1/B2; 2,048-digit windows; front/back separated; 10 distinct tickets per model |
 | GitHub repository access | VERIFIED | Public repository; default branch main; write permission available |
-| GitHub Actions CI | NOT VERIFIED | Workflow exists, but passing run/logs have not yet been inspected |
-| Official history snapshot | MISSING | No committed raw snapshot/manifest or continuity audit yet |
-| Power simulation | MISSING | MDE and target power approved; simulation/test implementation not yet published |
-| Seed anti-reroll control | MISSING | Current generator creates a fresh OS seed on each invocation; one-seed-per-draw commitment must be implemented before activation |
+| GitHub Actions CI | NOT VERIFIED | Base CI and new power workflow exist; latest runs/logs for the expanded test suite have not been independently inspected |
+| Official history snapshot | MISSING | Downloader, cutoff-safe snapshotting and raw-page auditor implemented; no real official snapshot has yet been retrieved and audited |
+| Power simulation | PRELIMINARY | 100,000-replicate-per-scenario parametric reference report published; actual model-specific covariance and final inferential method remain open |
+| Seed anti-reroll control | IMPLEMENTED WITH RESIDUAL TRUST | One-time seed ceremony, persistent fail-closed lock, generator and ledger checks implemented; external timestamp authenticity remains manually verified |
 | Commit–reveal integration | NOT VERIFIED | Code exists; clean round-trip and public independent-anchor test remain outstanding |
 
 ## Important implementation reconciliation
@@ -30,11 +30,11 @@ The implemented C/D random stream is SHA-256 counter mode with rejection-based r
 
 ## Blocking defects / controls before activation
 
-1. Prevent seed shopping. A single root seed must be committed to an independent public timestamp before generation. A second seed commitment for the same draw must be rejected. A failed generation must be recorded as a technical failure, not rerun with a replacement seed.
-2. Complete the simulation-based power analysis. It must define the alternative-generation mechanism for a +0.10 front-hit MDE, draw-level paired test, confidence intervals, Holm correction and Monte Carlo error. Publish fixed seed and at least 100,000 simulations.
+1. Independently verify the public seed commitment anchor (full commit SHA and timestamp) against GitHub and a second timestamp service. The local scripts validate supplied anchor fields but do not query the external service themselves.
+2. Calibrate the power simulation using a verified 200-payload portfolio panel and the exact 4×4 exposure covariance matrix; freeze the final confirmatory test and confidence-interval method. The current reference power result is not a power certification.
 3. Add integration tests for complete 50-ticket generation, invalid payload rejection, duplicate commits, cutoff enforcement, commit/reveal verification and tamper detection.
 4. Execute CI on the declared Python versions and inspect successful logs.
-5. Retrieve the official history snapshot and audit draw IDs, dates, missing issues, duplicates, corrections, valid ranges and source hashes. Snapshot retrieval time must not be backdated.
+5. Retrieve a fresh official history snapshot into a timestamped directory, require the raw-page audit to PASS, and reconcile candidate issue gaps against the official draw calendar. Cross-snapshot corrections still require review.
 6. Freeze exact Python patch version, runner image, code hashes, data hashes and analysis-plan hash.
 7. Independently timestamp the activation record and every forecast commitment before the official draw cutoff.
 
