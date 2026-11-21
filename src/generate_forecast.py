@@ -6,7 +6,7 @@ digit transform differs. C and D use deterministic SHA-256 counter streams
 derived from a per-draw 256-bit root seed. No third-party packages are needed.
 """
 from __future__ import annotations
-import argparse, csv, datetime as dt, hashlib, json, secrets
+import argparse, csv, datetime as dt, hashlib, json
 from pathlib import Path
 
 EXP_ID = "DLT-PI-200"
@@ -191,6 +191,9 @@ def main():
     ap.add_argument("--cutoff-utc",required=True)
     ap.add_argument("--pi-digits",default="data/pi_digits_600000.txt")
     ap.add_argument("--history",required=True)
+    ap.add_argument("--seed-file",required=True,help="private 32-byte hex seed created by seed_ceremony.py")
+    ap.add_argument("--seed-commitment",required=True,help="public per-draw seed commitment JSON")
+    ap.add_argument("--seed-anchor",required=True,help="independent timestamp attestation JSON for the public commitment")
     ap.add_argument("--analysis-plan",default="PREREGISTRATION.md")
     ap.add_argument("--output",required=True)
     args=ap.parse_args()
@@ -201,7 +204,26 @@ def main():
         raise ValueError("pi digit file failed known-prefix or decimal-only validation")
     history_path=Path(args.history)
     fc,bc,n_hist,hist_hash,latest_pub=read_history(history_path,cutoff)
-    root=secrets.token_bytes(32)
+    seed_path=Path(args.seed_file)
+    commitment_path=Path(args.seed_commitment)
+    anchor_path=Path(args.seed_anchor)
+    root=bytes.fromhex(seed_path.read_text(encoding="ascii").strip())
+    if len(root)!=32:
+        raise ValueError("root seed must be exactly 32 bytes")
+    seed_commitment=json.loads(commitment_path.read_text(encoding="utf-8"))
+    seed_anchor=json.loads(anchor_path.read_text(encoding="utf-8"))
+    seed_hash=sha(root)
+    if seed_commitment.get("experiment_id")!=EXP_ID or seed_commitment.get("draw_id")!=args.draw_id:
+        raise ValueError("seed commitment does not match this experiment/draw")
+    if seed_commitment.get("seed_commitment_sha256")!=seed_hash:
+        raise ValueError("private seed does not match the precommitted public seed hash")
+    if seed_anchor.get("seed_commitment_sha256")!=seed_hash:
+        raise ValueError("external anchor does not bind the same seed commitment")
+    anchor_time=parse_utc(seed_anchor.get("anchored_at_utc",""))
+    if anchor_time>=cutoff:
+        raise ValueError("seed commitment was not externally anchored before cutoff")
+    if not seed_anchor.get("anchor_url") or not seed_anchor.get("anchor_commit_sha"):
+        raise ValueError("external anchor URL and immutable commit SHA are required")
     tickets={
       "A":pi_tickets(pi_digits,args.draw_id,"identity"),
       "B1":pi_tickets(pi_digits,args.draw_id,"reverse"),
@@ -234,7 +256,7 @@ def main():
                     "C_D_PRNG":"SHA-256 counter stream; randbelow by rejection; no floating point"},
       "pi_source_sha256":sha(pi_raw.rstrip(b"\n")),"historical_snapshot_sha256":hist_hash,
       "historical_draw_count":n_hist,"history_latest_publication_utc":latest_pub,
-      "root_seed_hex":root.hex(),"seed_derivation":"SHA256(root_seed_bytes || UTF8(experiment_id|draw_id|model_id))",
+      "root_seed_hex":root.hex(),"root_seed_commitment_sha256":seed_hash,"seed_anchor":seed_anchor,"seed_derivation":"SHA256(root_seed_bytes || UTF8(experiment_id|draw_id|model_id))",
       "primary_endpoint":"per-draw mean front hits per ticket; paired model-vs-D",
       "secondary_endpoint":"per-draw mean back hits per ticket; paired model-vs-D",
       "analysis_plan_sha256":sha(Path(args.analysis_plan).read_bytes())
@@ -248,7 +270,7 @@ def main():
     print(json.dumps({"status":"FORECAST_PAYLOAD_CREATED_NOT_COMMITTED","draw_id":args.draw_id,
       "models":{m:len(tickets[m]) for m in MODELS},"payload_sha256":sha(canonical(payload)),
       "pi_source_sha256":payload["pi_source_sha256"],"historical_snapshot_sha256":hist_hash,
-      "instruction":"Run prospective.py commit only after validating the payload and before the official cutoff."},indent=2))
+      "instruction":"Run prospective.py commit only after validating the payload and before the official cutoff; do not rerun with a replacement seed."},indent=2))
 
 
 if __name__=="__main__":
