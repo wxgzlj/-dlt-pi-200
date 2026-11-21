@@ -49,27 +49,27 @@ A sensitivity analysis multiplies the reference standard deviation by 1.25, 1.50
 ## 5. Monte Carlo implementation
 
 - Replicates: 100,000 per effect/noise scenario.
-- PRNG: CPython `random.Random` (MT19937).
+- PRNG: CPython `random.Random` (MT19937); preliminary run environment: CPython 3.13.5.
 - Base seed: 2026112101; scenario-specific seeds are deterministic offsets from this base.
-- Report: estimated power, family rejection rate, Monte Carlo standard error, and 95% Monte Carlo interval.
+- Report: estimated power, family rejection rate, Monte Carlo standard error, and 95% Wilson Monte Carlo interval.
 - The null scenario's family rejection rate is a simulation diagnostic for Holm family-wise error control; it is not a proof of control.
 
 ## 6. Preliminary results (2026-11-21)
 
 | Mean shift | Reference-noise power | 95% Monte Carlo interval |
 |---:|---:|---:|
-| 0.00 | 1.374% target-comparison rejection | 1.302%–1.446% |
-| 0.05 | 35.607% | 35.315%–35.899% |
-| 0.10 | 96.213% | 96.077%–96.315% |
-| 0.15 | 99.997% | 99.989%–100.000% |
-| 0.20 | 100.000% | 100.000%–100.000% |
+| 0.00 | 1.374% target-comparison rejection | 1.304%–1.448% |
+| 0.05 | 35.607% | 35.311%–35.904% |
+| 0.10 | 96.213% | 96.093%–96.330% |
+| 0.15 | 99.997% | 99.991%–99.999% |
+| 0.20 | 100.000% | 99.996%–100.000% |
 
-Under the null, the simulated family rejection rate was 4.347% (Monte Carlo SE 0.0645 percentage points; 95% Monte Carlo interval 4.221%–4.473%).
+Under the null, the simulated family rejection rate was 4.347% (Monte Carlo SE 0.0645 percentage points; 95% Monte Carlo interval 4.222%–4.475%).
 
 For the +0.10 MDE, power fell to:
-- 82.291% when reference SD was multiplied by 1.25;
-- 63.642% when multiplied by 1.50;
-- 35.911% when multiplied by 2.00.
+- 82.291% (95% Wilson interval 82.053%–82.526%) when reference SD was multiplied by 1.25;
+- 63.642% (95% Wilson interval 63.343%–63.940%) when multiplied by 1.50;
+- 35.911% (95% Wilson interval 35.614%–36.209%) when multiplied by 2.00.
 
 The simulation used 100,000 replicates per scenario. These are parametric planning estimates under the assumptions above.
 
