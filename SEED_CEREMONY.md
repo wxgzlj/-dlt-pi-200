@@ -31,6 +31,8 @@ Publish only \`ledger/seed_commitments/26134.json\` to the public repository. Re
 
 Save as \`ledger/seed_commitments/26134.anchor.json\`. The anchor must be created before the official draw cutoff. A repository commit is public evidence, but GitHub alone is not an independent immutable timestamp authority; preserve a second timestamp receipt where possible.
 
+Before forecast generation, run `python src/audit_history.py --snapshot-dir data/history_snapshot/<snapshot_id> --cutoff-utc "<official-cutoff-utc>" --output data/history_snapshot/<snapshot_id>/audit.json` and require `status=PASS` (or explicitly resolve every warning). Use the same audited CSV path below.
+
 ## 3. Generate forecast once
 
 Only after the public seed commitment has been timestamped:
