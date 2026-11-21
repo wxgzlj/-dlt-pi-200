@@ -170,3 +170,9 @@ Confirmatory cohort remains **0/200**; no forecast has been committed for the co
 - The local history audit now verifies raw API pages, normalized CSV, official calendar attestation, preserved calendar source bytes and hashes. The generator/commit layer requires a PASS report with verified calendar continuity.
 - Residual reproducibility gap: the snapshot directory is currently local/ignored and the generator does not yet require a public GitHub commit anchoring the CSV, raw pages, calendar source document, attestation and audit report. Their hashes are embedded in the forecast payload, but a public reviewer may not be able to retrieve the underlying evidence bundle.
 - Before activation, publish the evidence bundle (or a durable public artifact) and independently timestamp its manifest before forecast generation. The forecast payload should bind the evidence-manifest hash and public commit SHA. This remains an explicit activation blocker, not a completed control.
+
+
+## Addendum — calendar attestation semantic verification boundary (2026-11-21)
+
+- The auditor checks the attestation's official-domain HTTPS URL, timezone-aware retrieval time, preserved source-document bytes/hash, and exact issue/date-set equality between the supplied `draw_records` and CSV.
+- It does not parse the HTML/PDF to prove that the supplied `draw_records` were transcribed correctly from the source. The operator must manually inspect the preserved official calendar document. This is a human-verified provenance assertion, not an automated independent extraction or cryptographic proof.
