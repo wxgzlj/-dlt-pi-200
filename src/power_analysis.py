@@ -243,7 +243,7 @@ def main():
     parser.add_argument("--seed", type=int, default=2026112101)
     parser.add_argument("--output", default="results/power_analysis_preliminary.json")
     parser.add_argument("--power-plan", default="POWER_ANALYSIS_PLAN.md")
-    parser.add_argument("--preregistration", default="PREREGISTRATION.md")
+    parser.add_argument("--preregistration-commit", default="d64002531a9a6661c533cb47acdc48d8a89e2ead")
     parser.add_argument("--allow-small-run", action="store_true")
     args = parser.parse_args()
     if args.simulations < 100_000 and not args.allow_small_run:
@@ -252,7 +252,7 @@ def main():
     report["provenance"] = {
         "source_code_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
         "power_plan_sha256": hashlib.sha256(Path(args.power_plan).read_bytes()).hexdigest(),
-        "preregistration_sha256": hashlib.sha256(Path(args.preregistration).read_bytes()).hexdigest(),
+        "preregistration_commit": args.preregistration_commit,
     }
     output = Path(args.output)
     output.parent.mkdir(parents=True, exist_ok=True)
