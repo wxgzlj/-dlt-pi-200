@@ -107,7 +107,8 @@ def simulate_covariance(reps,effect,sd_mult,seed,covariance,target_index=0,targe
 
     The average per-draw covariance is treated as the common covariance for
     the 200 draw-level observations. Bartlett's Wishart construction preserves
-    the cross-comparison dependence from the shared control.
+    the supplied cross-comparison dependence. Draw-to-draw heteroskedasticity
+    is approximated by the average covariance.
     """
     rng=random.Random(seed); df=N-1; p=NTEST
     scaled=[[float(covariance[i][j])*sd_mult*sd_mult for j in range(p)] for i in range(p)]
@@ -217,7 +218,11 @@ def report(reps,seed,covariance=None,target_model="A",covariance_source="REFEREN
             "joint_dependence":joint_description,
             "limitation":covariance_limitation},
         "null_fwer_check":curve[0],"power_curve":curve,"noise_inflation_sensitivity":stress,
-        "conclusion":"PRELIMINARY_ONLY; do not certify adequate power until actual frozen portfolio exposure covariance is calibrated"
+        "conclusion":(
+            "PRELIMINARY_ONLY; actual frozen portfolio exposure covariance is not supplied"
+            if covariance is None else
+            "PRELIMINARY_PANEL_COVARIANCE_ESTIMATE; final test freeze and heteroskedasticity/normality validation remain pending"
+        )
     }
 
 
