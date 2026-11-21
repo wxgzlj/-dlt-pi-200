@@ -1,6 +1,6 @@
 # DLT-PI-200 Preregistration
 
-**Status: DRAFT — NOT ACTIVE.** The following protocol is proposed and must be explicitly approved and frozen by an activation commit before the first confirmatory forecast.
+**Status: DESIGN APPROVED — NOT ACTIVE.** The user approved the design parameters on 2026-11-21 (Asia/Shanghai). Exact implementation, statistical analysis, data and timestamp gates remain open; approval is not activation.
 
 ## 1. Research question
 
@@ -39,9 +39,9 @@ Prize-tier/payout analysis is outside the primary endpoint and requires the curr
 
 The official draw calendar must be archived at activation. Every scheduled draw remains in the ledger with explicit status. Cancelled/postponed/missing draw treatment must follow a frozen rule; no silent substitution or deletion.
 
-## 4. Proposed frozen model parameters
+## 4. Approved design parameters
 
-See MODEL_REGISTRY.md and PARAMETER_DECISIONS.md. Parameters are proposals, not active until explicitly approved and recorded in the activation commit.
+The approved parameter set is recorded in DECISION_LOG.md and PARAMETER_DECISIONS.md. The current code and documents must be reconciled to this specification; the activation commit must freeze the final code and runtime hashes.
 
 ## 5. Endpoints
 
@@ -105,11 +105,11 @@ Economic value additionally requires official ticket costs, prize tiers, payouts
 
 ## 12. Activation checklist
 
-- [ ] User approves proposed exact parameters
+- [x] User approves proposed exact design parameters
 - [ ] Official rules and draw schedule archived
 - [ ] Complete historical result dataset verified for C
 - [ ] π digit generator and source prefix test pass
-- [ ] D/C seed derivation and PRNG implementation frozen
+- [ ] D/C seed derivation, PRNG implementation and one-seed-per-draw anti-reroll control frozen
 - [ ] Generator/auditor code and runtime frozen
 - [ ] Minimum effect and target power declared
 - [ ] Power analysis published
