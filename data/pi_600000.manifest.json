@@ -1,0 +1,10 @@
+{
+  "experiment_id": "DLT-PI-200",
+  "artifact": "pi decimal expansion after decimal point",
+  "digits": 600000,
+  "sha256_without_trailing_newline": "1f1f250f57eaad2b1164458638215e7d4ab3cccb9ee3314abec3cb5f7783c88f",
+  "prefix_50": "14159265358979323846264338327950288419716939937510",
+  "computation_status": "COMPUTED_INDEPENDENT_REPRODUCTION",
+  "runtime": "CPython 3.13.5",
+  "note": "The Chudnovsky binary-splitting calculation was independently reproduced in this analysis environment. This is not a GitHub Actions run and does not replace a clean execution of the repository script. Regenerate locally and compare the SHA-256 before activation."
+}
