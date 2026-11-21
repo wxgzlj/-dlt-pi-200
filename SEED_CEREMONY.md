@@ -31,7 +31,20 @@ Publish only \`ledger/seed_commitments/26134.json\` to the public repository. Re
 
 Save as \`ledger/seed_commitments/26134.anchor.json\`. The anchor must be created before the official draw cutoff. A repository commit is public evidence, but GitHub alone is not an independent immutable timestamp authority; preserve a second timestamp receipt where possible.
 
-Before forecast generation, run `python src/audit_history.py --snapshot-dir data/history_snapshot/<snapshot_id> --cutoff-utc "<official-cutoff-utc>" --output data/history_snapshot/<snapshot_id>/audit.json` and require `status=PASS` (or explicitly resolve every warning). Use the same audited CSV path below.
+Before forecast generation, independently reconcile every issue ID and draw date against the official Super Lotto draw calendar. Save `calendar_attestation.json` in the snapshot directory with this schema: 
+
+```json
+{
+  "status": "VERIFIED",
+  "source_url": "https://www.sporttery.cn/<official-calendar-path>",
+  "retrieved_at_utc": "<timezone-aware UTC timestamp before cutoff>",
+  "draw_records": [
+    {"draw_id": "<issue>", "draw_date": "YYYY-MM-DD"}
+  ]
+}
+```
+
+The `draw_records` list must exactly match the snapshot's full issue-ID/date set; do not infer or fill missing issues. Then run `python src/audit_history.py --snapshot-dir data/history_snapshot/<snapshot_id> --cutoff-utc "<official-cutoff-utc>" --calendar-attestation data/history_snapshot/<snapshot_id>/calendar_attestation.json --output data/history_snapshot/<snapshot_id>/audit.json` and require `status=PASS` with no warnings or errors. The calendar source must be on the official `sporttery.cn` domain and its retrieval timestamp must precede cutoff. Use the same audited CSV path below.
 
 ## 3. Generate forecast once
 
