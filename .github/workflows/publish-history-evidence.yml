@@ -89,6 +89,7 @@ jobs:
           BUNDLE_COMMIT="$(git rev-parse HEAD)"
           BUNDLE_TIME="$(git show -s --format=%cI "$BUNDLE_COMMIT")"
           MANIFEST_SHA="$(cat "evidence/history/$SNAPSHOT_ID/evidence_manifest.sha256" | awk '{print $1}')"
+          export BUNDLE_COMMIT BUNDLE_TIME MANIFEST_SHA
           python - <<'PY'
           import json, os
           p=f"evidence/history/{os.environ['SNAPSHOT_ID']}/ANCHOR.json"
