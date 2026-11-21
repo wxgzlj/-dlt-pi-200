@@ -6,6 +6,7 @@ on:
     paths:
       - "src/power_analysis.py"
       - "POWER_ANALYSIS_PLAN.md"
+      - "tests/test_power_analysis.py"
   workflow_dispatch:
 
 permissions:
