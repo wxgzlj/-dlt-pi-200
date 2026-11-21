@@ -71,3 +71,6 @@ Then validate and commit the forecast using the commit–reveal process. Do not 
 ## 4. Important limitation
 
 The generator validates the contents of the anchor-attestation JSON; it does not independently query GitHub or a trusted timestamp authority to prove the referenced commit time. The operator must verify the URL, commit SHA and timestamp against the public service before running the generator. This is an explicit residual trust boundary, not a cryptographic guarantee.
+
+
+**Calendar-attestation trust boundary:** the auditor verifies the official-domain URL, retrieval time, raw-document SHA-256 and exact equality between the supplied `draw_records` list and the CSV. It does not parse the HTML/PDF and independently prove that the list was transcribed correctly. The operator must inspect the preserved official source document; this is a human-verified attestation, not a trustless proof.
