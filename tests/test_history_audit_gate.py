@@ -18,6 +18,7 @@ class TestHistoryAuditGate(unittest.TestCase):
             "snapshot_completed_at_utc": "2026-11-21T12:00:00Z",
             "continuity_status": "VERIFIED_AGAINST_OFFICIAL_CALENDAR",
             "calendar_attestation_sha256": "6" * 64,
+            "calendar_source_document_sha256": "7" * 64,
         }
         self.audit_hash = sha(canonical(self.audit))
         self.payload = {
