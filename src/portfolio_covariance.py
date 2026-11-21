@@ -100,6 +100,8 @@ def paired_difference_covariance(model_cov, names, control="D", candidates=CANDI
 def analyze_payload(payload):
     if payload.get("experiment_id") != "DLT-PI-200":
         raise ValueError("payload experiment_id is not DLT-PI-200")
+    if not isinstance(payload.get("draw_id"), str) or not payload["draw_id"].strip():
+        raise ValueError("payload draw_id must be a non-empty string")
     tickets = payload.get("tickets")
     if not isinstance(tickets, dict) or set(tickets) != set(MODELS):
         raise ValueError("payload must contain exactly A,B1,B2,C,D")
@@ -130,6 +132,11 @@ def analyze_payload(payload):
 def analyze_panel(payloads):
     if len(payloads) != 200:
         raise ValueError("confirmatory power panel must contain exactly 200 draw payloads")
+    draw_ids = [p.get("draw_id") for p in payloads]
+    if any(not isinstance(x, str) or not x.strip() for x in draw_ids):
+        raise ValueError("every panel payload must have a non-empty draw_id")
+    if len(set(draw_ids)) != len(draw_ids):
+        raise ValueError("portfolio panel contains duplicate draw_id values")
     draw_reports = [analyze_payload(p) for p in payloads]
     names = list(CANDIDATES)
     avg_cov = [[
