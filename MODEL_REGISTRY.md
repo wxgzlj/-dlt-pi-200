@@ -28,7 +28,7 @@ Each model produces exactly 10 distinct tickets per eligible draw. Ticket format
 - Sequential probability-proportional-to-size sampling without replacement, separately for front (5 of 35) and back (2 of 12).
 - Integer weighted selection uses rejection-based randbelow; no floating-point cumulative-weight sampling.
 - This is a heuristic marginal-frequency model, not a joint probability model; exploratory only.
-- Data snapshot hash, source and latest included publication timestamp are stored in every forecast payload.
+- Data snapshot hash, source and snapshot-completion timestamp are stored in every forecast payload.
 
 ## D — uniform-random control
 - Uniform sample without replacement for each zone.
