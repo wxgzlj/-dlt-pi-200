@@ -14,7 +14,7 @@ The script creates:
 - Private 32-byte seed: \`private/seeds/26134.seed\` (ignored by Git; never publish).
 - Public commitment: \`ledger/seed_commitments/26134.json\`.
 
-Both files use exclusive creation. If either already exists, the command fails. Do not delete the files, change the seed, or try again. Record any failure as a protocol deviation.
+The seed, public commitment and persistent one-attempt lock use exclusive creation. The lock is created before entropy is requested and is never removed. If any of these files already exists, the command fails. A partial failure is a protocol deviation, not permission to reroll; do not delete files or retry.
 
 ## 2. Timestamp the public commitment
 
